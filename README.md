@@ -49,3 +49,5 @@ eventMessage.json() // ["EVENT", <event json string here>] or nil
 let closeMessage = ClientMessage(type:.CLOSE, subscriptionId: "subId-1")
 closeMessage.json() // ["CLOSE","subId-1"] or nil
 ```
+
+See /Tests/NostrEssentialsTests for more examples

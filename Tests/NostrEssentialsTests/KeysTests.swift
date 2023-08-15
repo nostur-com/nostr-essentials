@@ -13,8 +13,8 @@ final class KeysTests: XCTestCase {
     func testKeyGeneration() throws {
         let keys = try Keys.newKeys()
         
-        XCTAssertEqual(keys.privateKeyHex().count, 64)
-        XCTAssertEqual(keys.publicKeyHex().count, 64)
+        XCTAssertEqual(keys.privateKeyHex().count, 64) // a 64 character key as hex string
+        XCTAssertEqual(keys.publicKeyHex().count, 64) // a 64 character key as hex string
     }
     
     func testKeyImport() throws {
