@@ -27,7 +27,7 @@ public struct Event: Codable {
         case sig
     }
     
-    enum EventError : Error {
+    public enum EventError : Error {
         case InvalidId
         case InvalidSignature
         case EOSE
@@ -43,7 +43,7 @@ public struct Event: Codable {
         self.sig = ""
     }
 
-    init(pubkey:String = "", content:String = "", kind:Int = 1, created_at:Int = Int(Date.now.timeIntervalSince1970), id:String = "", tags:[Tag] = [], sig:String = "") {
+    public init(pubkey:String = "", content:String = "", kind:Int = 1, created_at:Int = Int(Date.now.timeIntervalSince1970), id:String = "", tags:[Tag] = [], sig:String = "") {
         self.kind = kind
         self.created_at = created_at
         self.content = content
@@ -167,16 +167,27 @@ public struct Event: Codable {
 //    }
 }
 
-struct SetMetadata: Codable {
+public struct SetMetadata: Codable {
 
-    var name: String?
-    var display_name: String?
-    var about: String?
-    var picture: String?
-    var banner: String?
-    var nip05: String? = nil
-    var lud16: String? = nil
-    var lud06: String? = nil
+    public var name: String?
+    public var display_name: String?
+    public var about: String?
+    public var picture: String?
+    public var banner: String?
+    public var nip05: String? = nil
+    public var lud16: String? = nil
+    public var lud06: String? = nil
+    
+    public init(name: String? = nil, display_name: String? = nil, about: String? = nil, picture: String? = nil, banner: String? = nil, nip05: String? = nil, lud16: String? = nil, lud06: String? = nil) {
+        self.name = name
+        self.display_name = display_name
+        self.about = about
+        self.picture = picture
+        self.banner = banner
+        self.nip05 = nip05
+        self.lud16 = lud16
+        self.lud06 = lud06
+    }
 
     enum CodingKeys: String, CodingKey {
         case name
@@ -189,5 +200,5 @@ struct SetMetadata: Codable {
         case lud06
     }
     
-    func json() -> String? { toJson(self) }
+    public func json() -> String? { toJson(self) }
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-func toJson(_ object:Encodable) -> String? {
+public func toJson(_ object:Encodable) -> String? {
     let encoder = JSONEncoder()
     guard let encoded = try? encoder.encode(object), let jsonString = String(data: encoded, encoding: .utf8) else {
         return nil

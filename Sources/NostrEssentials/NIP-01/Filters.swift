@@ -22,13 +22,22 @@ import Foundation
  }
  */
 
-struct Filters:Codable, REQelement {
-    var ids:Set<String>?
-    var authors:Set<String>?
-    var kinds:Set<Int>?
-    var since:Int?
-    var until:Int?
-    var limit:Int?
+public struct Filters:Codable, REQelement {
+    public var ids:Set<String>?
+    public var authors:Set<String>?
+    public var kinds:Set<Int>?
+    public var since:Int?
+    public var until:Int?
+    public var limit:Int?
     
-    func json() -> String? { toJson(self) }
+    public init(ids: Set<String>? = nil, authors: Set<String>? = nil, kinds: Set<Int>? = nil, since: Int? = nil, until: Int? = nil, limit: Int? = nil) {
+        self.ids = ids
+        self.authors = authors
+        self.kinds = kinds
+        self.since = since
+        self.until = until
+        self.limit = limit
+    }
+    
+    public func json() -> String? { toJson(self) }
 }

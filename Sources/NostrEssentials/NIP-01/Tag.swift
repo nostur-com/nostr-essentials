@@ -8,11 +8,11 @@
 import Foundation
 
 public struct Tag: Codable {
-    let tag: [String]
-    var type: String { tag.first ?? "" } // "e", "p", "t", etc..
-    var id: String? { tag[1] } // for convenience
-    var pubkey: String? { tag[1] } // for convenience
-    var value: String? { tag[1] } // for convenience
+    public let tag: [String]
+    public var type: String { tag.first ?? "" } // "e", "p", "t", etc..
+    public var id: String? { tag[1] } // for convenience
+    public var pubkey: String? { tag[1] } // for convenience
+    public var value: String? { tag[1] } // for convenience
     
     public init(_ tag:[String]) {
         self.tag = tag
@@ -32,9 +32,9 @@ public struct Tag: Codable {
         try container.encode(contentsOf: tag)
     }
     
-    enum DecodingError: Error {
+    public enum DecodingError: Error {
         case MissingTag
     }
     
-    func json() -> String? { toJson(self) }
+    public func json() -> String? { toJson(self) }
 }

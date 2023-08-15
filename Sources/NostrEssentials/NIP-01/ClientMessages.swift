@@ -21,27 +21,34 @@ import Foundation
  <filters> is a JSON object that determines what events will be sent in that subscription, see Filters.swift
  */
 
-struct ClientMessage: Encodable {
+public struct ClientMessage: Encodable {
     
-    enum ClientMessageType {
+    public enum ClientMessageType {
         case EVENT
         case REQ
         case CLOSE
     }
     
-    let type:ClientMessageType
+    public let type:ClientMessageType
     
     // if EVENT:
-    var event:Event?
+    public var event:Event?
     
     // if REQ or CLOSE:
-    var subscriptionId:String?
+    public var subscriptionId:String?
 
     // if REQ
-    var filters:[Filters]?
+    public var filters:[Filters]?
+    
+    public init(type: ClientMessageType, event: Event? = nil, subscriptionId: String? = nil, filters: [Filters]? = nil) {
+        self.type = type
+        self.event = event
+        self.subscriptionId = subscriptionId
+        self.filters = filters
+    }
         
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
         
         if type == .REQ {
@@ -66,23 +73,23 @@ struct ClientMessage: Encodable {
         }
     }
     
-    enum EncodingError: Error {
+    public enum EncodingError: Error {
         case FiltersMissing
         case SubscriptionIdMissing
         case EventMissing
     }
 
-    func json() -> String? { toJson(self) }
+    public func json() -> String? { toJson(self) }
 }
 
 protocol REQelement: Codable {}
 
 extension String: REQelement {}
 
-struct REQmessage: Codable {
+public struct REQmessage: Codable {
     var elements: [REQelement]
     
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
         
         var elements: [REQelement] = []
@@ -97,7 +104,7 @@ struct REQmessage: Codable {
         self.elements = elements
     }
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
         
         for element in elements {
@@ -109,5 +116,5 @@ struct REQmessage: Codable {
         }
     }
     
-    func json() -> String? { toJson(self) }
+    public func json() -> String? { toJson(self) }
 }
