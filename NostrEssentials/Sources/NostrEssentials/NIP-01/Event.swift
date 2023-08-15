@@ -55,16 +55,16 @@ public struct Event: Codable {
     
 }
 
-public struct SetMetadata: Codable {
+struct SetMetadata: Codable {
 
-    public var name: String?
-    public var display_name: String?
-    public var about: String?
-    public var picture: String?
-    public var banner: String?
-    public var nip05: String? = nil
-    public var lud16: String? = nil
-    public var lud06: String? = nil
+    var name: String?
+    var display_name: String?
+    var about: String?
+    var picture: String?
+    var banner: String?
+    var nip05: String? = nil
+    var lud16: String? = nil
+    var lud06: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case name
