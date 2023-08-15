@@ -41,11 +41,27 @@ final class FiltersTests: XCTestCase {
     
     func testSinceUntilLimit() throws {
         let filter = Filters(kinds: [1], since: 1676784320, until: 1678888888, limit: 777)
-        
+                
         XCTAssertEqual(
             """
             {"until":1678888888,"since":1676784320,"kinds":[1],"limit":777}
             """, filter.json())
+    }
+    
+    func testTags() throws {
+        let filterE = Filters(tagFilter: TagFilter(tag: "e", values: ["5e20aecb5b3dd31499018d8f153df38edde23a7bd95d3db07dd975d772b44ec7"]))
+                
+        XCTAssertEqual(
+            """
+            {"#e":["5e20aecb5b3dd31499018d8f153df38edde23a7bd95d3db07dd975d772b44ec7"]}
+            """, filterE.json())
+        
+        let filterP = Filters(tagFilter: TagFilter(tag: "p", values: ["9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e"]))
+                
+        XCTAssertEqual(
+            """
+            {"#p":["9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e"]}
+            """, filterP.json())
     }
     
 }
