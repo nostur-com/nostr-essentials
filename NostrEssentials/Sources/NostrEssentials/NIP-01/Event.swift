@@ -36,7 +36,7 @@ public struct Event: Codable {
     init(pubkey:String = "", content:SetMetadata) {
         self.created_at = Int(Date.now.timeIntervalSince1970)
         self.kind = 0
-        self.content = try! content.encodedString()
+        self.content = content.json() ?? ""
         self.id = ""
         self.tags = []
         self.pubkey = pubkey
@@ -76,9 +76,6 @@ public struct SetMetadata: Codable {
         case lud16
         case lud06
     }
-
-    public func encodedString() throws -> String {
-        let encoder = JSONEncoder()
-        return String(decoding: try encoder.encode(self), as: UTF8.self)
-    }
+    
+    func json() -> String? { toJson(self) }
 }

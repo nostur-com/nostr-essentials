@@ -29,4 +29,6 @@ struct Filters:Codable, REQelement {
     var since:Int?
     var until:Int?
     var limit:Int?
+    
+    func json() -> String? { toJson(self) }
 }

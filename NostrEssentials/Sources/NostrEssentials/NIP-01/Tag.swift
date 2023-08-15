@@ -35,4 +35,6 @@ public struct Tag: Codable {
     enum DecodingError: Error {
         case MissingTag
     }
+    
+    func json() -> String? { toJson(self) }
 }

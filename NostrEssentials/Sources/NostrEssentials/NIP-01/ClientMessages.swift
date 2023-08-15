@@ -72,6 +72,7 @@ struct ClientMessage: Encodable {
         case EventMissing
     }
 
+    func json() -> String? { toJson(self) }
 }
 
 protocol REQelement: Codable {}
@@ -107,4 +108,6 @@ struct REQmessage: Codable {
             }
         }
     }
+    
+    func json() -> String? { toJson(self) }
 }
