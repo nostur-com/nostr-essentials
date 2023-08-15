@@ -22,7 +22,7 @@ import Foundation
  }
  */
 
-public struct Filters:Codable, REQelement {
+public struct Filters: Encodable, REQelement {
     public var ids:Set<String>?
     public var authors:Set<String>?
     public var kinds:Set<Int>?

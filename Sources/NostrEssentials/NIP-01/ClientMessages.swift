@@ -82,27 +82,12 @@ public struct ClientMessage: Encodable {
     public func json() -> String? { toJson(self) }
 }
 
-protocol REQelement: Codable {}
+protocol REQelement: Encodable {}
 
 extension String: REQelement {}
 
-public struct REQmessage: Codable {
+public struct REQmessage: Encodable {
     var elements: [REQelement]
-    
-    public init(from decoder: Decoder) throws {
-        var container = try decoder.unkeyedContainer()
-        
-        var elements: [REQelement] = []
-        while !container.isAtEnd {
-            if let stringElement = try? container.decode(String.self) {
-                elements.append(stringElement)
-            } else if let filterElement = try? container.decode(Filters.self) {
-                elements.append(filterElement)
-            }
-        }
-        
-        self.elements = elements
-    }
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
