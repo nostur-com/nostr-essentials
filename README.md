@@ -35,18 +35,24 @@ event.json() // <json string of the event> or nil
 ```swift
 import NostrEssentials
 
-// REQ (with a filter)
-let filter = Filters(kinds:[1], limit: 10)
-let requestMessage = ClientMessage(type:.REQ, subscriptionId:"example", filters: [filter])
-requestMessage.json() // ["REQ","test",{"kinds":[1],"limit":10}] or nil
+// REQ (with a kinds/limit filter)
+let filter = Filters(kinds: [1], limit: 10)
+let requestMessage = ClientMessage(type: .REQ, subscriptionId: "example", filters: [filter])
+requestMessage.json() // ["REQ","example",{"kinds":[1],"limit":10}] or nil
+
+// REQ (with a #p filter)
+let pFilter = Filters(tagFilter: TagFilter(tag: "p", values: ["9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e","9be0be0fc079548233231614e4e1efc9f28b0db398011efeecf05fe570e5dd33"]))
+let requestMessage = ClientMessage(type: .REQ, subscriptionId: "example2", filters: [pFilter])
+requestMessage.json() // ["REQ","example2",{"#p":["9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e","9be0be0fc079548233231614e4e1efc9f28b0db398011efeecf05fe570e5dd33"]}] or nil
+
 
 // EVENT (for publishing an event)
 let event = Event(...) // see event code above
-let eventMessage = ClientMessage(type:.EVENT, event:event)
+let eventMessage = ClientMessage(type: .EVENT, event: event)
 eventMessage.json() // ["EVENT", <event json string here>] or nil
  
 // CLOSE (to close a subscription)
-let closeMessage = ClientMessage(type:.CLOSE, subscriptionId: "subId-1")
+let closeMessage = ClientMessage(type: .CLOSE, subscriptionId: "subId-1")
 closeMessage.json() // ["CLOSE","subId-1"] or nil
 ```
 
