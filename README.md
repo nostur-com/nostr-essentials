@@ -8,13 +8,37 @@ As of August 15th 2023, this project has just started, it will eventually:
 
 ## Current features
 
-- Generate nostr keys
+- Working with nostr keys
 ```swift
 import NostrEssentials
 
+// Generate keys
 guard let keys = try? Keys.newKeys() else { return }
 keys.privateKeyHex() // private key as a hex string
 keys.publicKeyHex() // public key as a hex string
+
+// Or import private key
+guard let keys = try? Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e") else { return }
+
+// keys as npub/nsec bech32 format 
+keys.nsec // "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc"
+keys.npub // "npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7"
+
+
+// Key conversion:
+
+// public key hex to npub
+Keys.npub(hex: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448") // "npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7"
+
+// prviate key hex to nsec
+Keys.nsec(hex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e") // "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc"
+
+// npub to public key hex
+Keys.hex(npub: "npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7") // "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448"
+
+// nsec to private key hex
+Keys.hex(nsec: "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc") // "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e"
+
 ```
 - Generate nostr events
 ```swift
