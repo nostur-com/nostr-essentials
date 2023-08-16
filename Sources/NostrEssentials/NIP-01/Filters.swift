@@ -97,4 +97,9 @@ public struct Filters: Encodable, REQelement {
 public struct TagFilter {
     public var tag:String // "e" or "p" or "t", etc...
     public var values:[String] // <a list of event ids, or other values that are referenced in the tag specified by the single letter>
+    
+    public init(tag: String, values: [String]) {
+        self.tag = tag
+        self.values = values
+    }
 }
