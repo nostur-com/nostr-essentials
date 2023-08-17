@@ -235,11 +235,12 @@ public class Bech32 {
     //
     static func decode(other: String) throws -> (String, Data) {
         let bech32 = Bech32()
-        guard let (hrp, decodedData) = try? bech32.decode(other, skipLimit: true) else {
-            throw LNURLAuthError.invalidLNURL
-        }
+        let (hrp, decodedData) = try bech32.decode(other, skipLimit: true)
 
-        let data = decodedData.convertBits(from: 5, to: 8)
+        guard let data = decodedData.convertBits(from: 5, to: 8, pad: false) else {
+            throw DecodingError.bitsConversionFailed
+        }
+                
         
         return (hrp, data)
     }
@@ -315,6 +316,7 @@ extension Data {
     
 //     ConvertBits converts a byte slice where each byte is encoding fromBits bits,
 //     to a byte slice where each byte is encoding toBits bits.
+    // For ShareableIdentifier.init(bech32)
     func convertBits(from: Int, to: Int, pad: Bool) -> Data? {
         var acc: Int = 0
         var bits: Int = 0

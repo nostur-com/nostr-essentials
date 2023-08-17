@@ -23,34 +23,34 @@ extension Keys {
     }
     
     static public func npub(hex:String) -> String {
-        let data = Data(bytes: hex.hexToBytes(), count: 32)
-            .convertBits(from: 8, to: 5, pad: true)!
-        
-        let bech32 = Bech32()
-        return bech32.encode("npub", values: data)
+        return Self.bech32(hex, prefix: "npub")
     }
     
     static public func nsec(hex:String) -> String {
-        let data = Data(bytes: hex.hexToBytes(), count: 32)
+        return Self.bech32(hex, prefix: "nsec")
+    }
+    
+    static public func bech32(_ idOrKey:String, prefix:String) -> String {
+        let data = Data(bytes: idOrKey.hexToBytes(), count: 32)
             .convertBits(from: 8, to: 5, pad: true)!
         
         let bech32 = Bech32()
-        return bech32.encode("nsec", values: data)
+        return bech32.encode(prefix, values: data)
     }
     
-    
-    static public func hex(nsec:String) -> String {
+    static public func hex(_ idORkey:String) -> String {
         let bech32 = Bech32()
-        let (_, checksum) = try! bech32.decode(nsec)
+        let (_, checksum) = try! bech32.decode(idORkey)
         let key = checksum.convertBits(from: 5, to: 8, pad: false)!.makeBytes()
         return key.hexString()
+    }
+    
+    static public func hex(nsec:String) -> String {
+        return Self.hex(nsec)
     }
     
     static public func hex(npub:String) -> String {
-        let bech32 = Bech32()
-        let (_, checksum) = try! bech32.decode(npub)
-        let key = checksum.convertBits(from: 5, to: 8, pad: false)!.makeBytes()
-        return key.hexString()
+        return Self.hex(npub)
     }
     
     
