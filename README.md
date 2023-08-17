@@ -6,9 +6,20 @@ As of August 15th 2023, this project has just started, it will eventually:
 - Contain cleaned up, rewritten code from lessons learned while building Nostur (https://github.com/nostur-com/nostur-ios-public)
 - Make it easy to use for others in their nostr projects
 
-## Current features
+## Features
+- Generate and convert nostr keys
+- Generate nostr events
+- Generate client relay messages (REQ, EVENT, CLOSE) 
+- Encode/Decode Shareable Identifiers (NIP-19)
 
-### Working with nostr keys
+## Install in Xcode
+- Open your project or create a new project
+- Add a new package to your Package Depencies
+- Paste 'https://github.com/nostur-com/nostr-essentials' as Package URL and Add Package
+
+## Usage
+
+### Generating and converting nostr keys
 ```swift
 import NostrEssentials
 
@@ -80,7 +91,7 @@ let closeMessage = ClientMessage(type: .CLOSE, subscriptionId: "subId-1")
 closeMessage.json() // ["CLOSE","subId-1"] or nil
 ```
 
-## Shareable Identifiers (NIP-19) - Encoding
+### Shareable Identifiers (NIP-19) - Encoding
 ```swift
 import NostrEssentials
 
@@ -128,7 +139,7 @@ let note = try ShareableIdentifier(
 note.identifier // "note1tcs2aj6m8hf3fxgp3k83200n3mw7ywnmm9wnmvram96awu45fmrshq2hcy"
 ```
 
-## Shareable Identifiers (NIP-19) - Decoding
+### Shareable Identifiers (NIP-19) - Decoding
 ```swift
 import NostrEssentials
 
