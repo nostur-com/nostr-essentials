@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import secp256k1
 
 public struct Event: Codable {
     
@@ -25,12 +26,6 @@ public struct Event: Codable {
         case tags
         case content
         case sig
-    }
-    
-    public enum EventError : Error {
-        case InvalidId
-        case InvalidSignature
-        case EOSE
     }
 
     init(pubkey:String = "", content:SetMetadata) {
@@ -53,83 +48,80 @@ public struct Event: Codable {
         self.sig = sig
     }
     
-//    mutating func withId() -> NEvent {
-//
-//        let serializableEvent = NSerializableEvent(publicKey: self.publicKey, createdAt: self.createdAt, kind:self.kind, tags: self.tags, content: self.content)
-//
-//        let encoder = JSONEncoder()
-//        encoder.outputFormatting = .withoutEscapingSlashes
-//        let serializedEvent = try! encoder.encode(serializableEvent)
-//        let sha256Serialized = SHA256.hash(data: serializedEvent)
-//
-//        self.id = String(bytes:sha256Serialized.bytes)
-//
-//        return self
-//    }
+    public mutating func withId() -> Event {
+        self.id = self.computeId()
+        return self
+    }
+    
+    private func computeId(_ event:Event? = nil) -> String {
+        let idDigest = self.computeIdDigest(event ?? self)
+        return String(bytes:idDigest.bytes)
+    }
+    
+    private func computeId(_ idDigest:SHA256Digest) -> String {
+        return String(bytes:idDigest.bytes)
+    }
+    
+    private func computeIdDigest( _ event:Event? = nil) -> SHA256Digest {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .withoutEscapingSlashes
+        
+        let event = event ?? self
+        let sEvent = SerializableEvent(pubkey: event.pubkey, created_at: event.created_at, kind: event.kind, tags: event.tags, content: event.content)
+        
+        let serializedEvent = try! encoder.encode(sEvent)
+        return SHA256.hash(data: serializedEvent)
+    }
 
-//    mutating func sign(_ keys:NKeys) throws -> NEvent {
-//
-//        let serializableEvent = NSerializableEvent(publicKey: keys.publicKeyHex(), createdAt: self.createdAt, kind:self.kind, tags: self.tags, content: self.content)
-//
-//        let encoder = JSONEncoder()
-//        encoder.outputFormatting = .withoutEscapingSlashes
-//        let serializedEvent = try! encoder.encode(serializableEvent)
-//        let sha256Serialized = SHA256.hash(data: serializedEvent)
-//
-//        let sig = try! keys.signature(for: sha256Serialized)
-//
-//
-//        guard keys.publicKey.schnorr.isValidSignature(sig, for: sha256Serialized) else {
-//            throw "Signing failed"
-//        }
-//
-//        self.id = String(bytes:sha256Serialized.bytes)
-//        self.publicKey = keys.publicKeyHex()
-//        self.signature = String(bytes:sig.rawRepresentation.bytes)
-//
-//        return self
-//    }
+    public mutating func sign(_ keys:Keys, replaceAuthor:Bool = false) throws -> Event {
+        
+        guard replaceAuthor || self.pubkey == keys.publicKeyHex() else {
+            throw EventError.PubkeyMismatch
+        }
+        
+        self.pubkey = keys.publicKeyHex()
+        let sha256Serialized = self.computeIdDigest()
+        let sig = try! keys.signature(for: sha256Serialized)
 
-//    func verified() throws -> Bool {
-//        L.og.debug("✍️ VERIFYING SIG ✍️")
-//        let serializableEvent = NSerializableEvent(publicKey: self.publicKey, createdAt: self.createdAt, kind:self.kind, tags: self.tags, content: self.content)
-//
-//        let encoder = JSONEncoder()
-//        encoder.outputFormatting = .withoutEscapingSlashes
-//        let serializedEvent = try! encoder.encode(serializableEvent)
-//        let sha256Serialized = SHA256.hash(data: serializedEvent)
-//
-//        guard self.id == String(bytes:sha256Serialized.bytes) else {
-//            throw "🔴🔴 Invalid ID 🔴🔴"
-//        }
-//
-//        let xOnlyKey = try secp256k1.Signing.XonlyKey(rawRepresentation: self.publicKey.bytes, keyParity: 1)
-//        let pubKey = secp256k1.Signing.PublicKey(xonlyKey: xOnlyKey)
-//
-//        // signature from this event
-//        let schnorrSignature = try secp256k1.Signing.SchnorrSignature(rawRepresentation: self.signature.bytes)
-//
-//        // public and signature from this event is valid?
-//        guard pubKey.schnorr.isValidSignature(schnorrSignature, for: sha256Serialized) else {
-//            throw "Invalid signature"
-//        }
-//
-//        return true
-//    }
+        guard keys.publicKey.schnorr.isValidSignature(sig, for: sha256Serialized) else {
+            throw Keys.KeyError.SigningFailure
+        }
 
-//    func eventJson(_ outputFormatting:JSONEncoder.OutputFormatting? = nil) -> String {
-//        let encoder = JSONEncoder()
-//        encoder.outputFormatting = outputFormatting ?? .withoutEscapingSlashes
-//        let finalMessage = try! encoder.encode(self)
-//
-//        return String(data: finalMessage, encoding: .utf8)!
-//    }
-//
-//    func wrappedEventJson() -> String {
-//        return NRelayMessage.event(self)
-//    }
-//
-//
+        self.sig = String(bytes:sig.rawRepresentation.bytes)
+        self.id = self.computeId(sha256Serialized)
+
+        return self
+    }
+
+    public func verified() throws -> Bool {
+        let sha256Serialized = self.computeIdDigest()
+
+        guard self.id == String(bytes:sha256Serialized.bytes) else {
+            throw EventError.InvalidId
+        }
+
+        let xOnlyKey = try secp256k1.Signing.XonlyKey(rawRepresentation: self.pubkey.bytes, keyParity: 1)
+        let publicKey = secp256k1.Signing.PublicKey(xonlyKey: xOnlyKey)
+
+        // signature from this event
+        let schnorrSignature = try secp256k1.Signing.SchnorrSignature(rawRepresentation: self.sig.bytes)
+
+        // public and signature from this event is valid?
+        guard publicKey.schnorr.isValidSignature(schnorrSignature, for: sha256Serialized) else {
+            throw EventError.InvalidSignature
+        }
+
+        return true
+    }
+    
+    public enum EventError: Error {
+        case InvalidId
+        case InvalidSignature
+        case PubkeyMismatch
+    }
+
+    public func json() -> String? { toJson(self) }
+
 //    func bolt11() -> String? {
 //        tags.first(where: { $0.type == "bolt11" })?.tag[safe: 1]
 //    }
@@ -165,6 +157,26 @@ public struct Event: Codable {
 //    func tagNamed(_ type:String) -> String? {
 //        tags.first(where: { $0.type == type })?.value
 //    }
+}
+
+// Need this one in addition to Event because id must be 0 and should have no sig
+private struct SerializableEvent: Encodable {
+    let id = 0
+    let pubkey: String
+    let created_at: Int
+    let kind: Int
+    let tags: [Tag]
+    let content: String
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.unkeyedContainer()
+        try container.encode(id)
+        try container.encode(pubkey)
+        try container.encode(created_at)
+        try container.encode(kind)
+        try container.encode(tags)
+        try container.encode(content)
+    }
 }
 
 public struct SetMetadata: Codable {

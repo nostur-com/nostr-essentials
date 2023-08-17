@@ -54,5 +54,6 @@ public struct Keys {
     public enum KeyError: Error {
         case InvalidHex
         case NewKeyError
+        case SigningFailure
     }
 }

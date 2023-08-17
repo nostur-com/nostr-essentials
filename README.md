@@ -9,6 +9,7 @@ As of August 15th 2023, this project has just started, it will eventually:
 ## Features
 - Generate and convert nostr keys
 - Generate nostr events
+- Sign nostr events
 - Generate client relay messages (REQ, EVENT, CLOSE) 
 - Encode/Decode Shareable Identifiers (NIP-19)
 
@@ -66,6 +67,31 @@ let event = Event(
     
 event.json() // <json string of the event> or nil
 ```
+
+### Sign nostr events
+```swift
+let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+
+var unsignedEvent = Event(
+    pubkey: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448",
+    content: "Hello World", kind: 1, created_at: 1676784320
+)
+
+let signedEvent = try unsignedEvent.sign(keys)
+
+signedEvent.id // "f3eb5bc07a397bc275dd2ea3e5774a5cc308ec94856d04894d1328d414942dcc"
+signedEvent.sig // <generated signature>
+try signedEvent.verified() // true
+
+// The .id above is computed during signing, to precompute before signing use:
+let unsignedEventWithId = unsignedEvent.withId()
+unsignedEventWithId.id // "f3eb5bc07a397bc275dd2ea3e5774a5cc308ec94856d04894d1328d414942dcc"
+
+// If you are signing an event where the .pubkey does not match the given signing keys
+// you can override the .pubkey using replaceAuthor:
+let signedEvent = try unsignedEvent.sign(keys, replaceAuthor:true)
+```
+
 ### Generate client relay messages (REQ, EVENT, CLOSE) (NIP-01)
 ```swift
 import NostrEssentials
