@@ -9,36 +9,36 @@ import Foundation
 
 // NIP-19: Shareable identifiers with extra metadata
 
-class ShareableIdentifier: Hashable {
+public class ShareableIdentifier: Hashable {
     
-    static func == (lhs: ShareableIdentifier, rhs: ShareableIdentifier) -> Bool {
+    static public func == (lhs: ShareableIdentifier, rhs: ShareableIdentifier) -> Bool {
         lhs.bech32string == rhs.bech32string
     }
 
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(bech32string)
     }
     
-    var id:String?
-    var dTag:String? { id }
-    var aTag:String? {
+    public var id:String?
+    public var dTag:String? { id }
+    public var aTag:String? {
         guard let kind = kind else { return nil }
         guard let dTag = dTag else { return nil }
         guard let pubkey = pubkey else { return nil }
         return String(format: "%d:%@:%@", kind, pubkey, dTag)
     }
     let bech32string:String
-    var identifier:String { bech32string }
-    let prefix:String
+    public var identifier:String { bech32string }
+    public let prefix:String
     
-    var pubkey: String?
-    var privkey: String?
-    var relayUrl: String?
-    var relays: [String] = []
-    var relay:String? { relayUrl }
-    var kind: Int?
+    public var pubkey: String?
+    public var privkey: String?
+    public var relayUrl: String?
+    public var relays: [String] = []
+    public var relay:String? { relayUrl }
+    public var kind: Int?
     
-    init(_ bech32string:String) throws {
+    public init(_ bech32string:String) throws {
         self.bech32string = bech32string
         
         if bech32string.count == 63 {
@@ -117,7 +117,7 @@ class ShareableIdentifier: Hashable {
     }
     
     // naddr/nevent/nprofile,nrelay
-    init(_ prefix:String, id:String? = nil, kind:Int? = nil, pubkey:String? = nil, dTag:String? = nil, relayUrl:String? = nil, relays:[String] = []) throws {
+    public init(_ prefix:String, id:String? = nil, kind:Int? = nil, pubkey:String? = nil, dTag:String? = nil, relayUrl:String? = nil, relays:[String] = []) throws {
         
         if prefix == "npub", let pubkey {
             self.prefix = prefix
