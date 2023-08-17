@@ -12,6 +12,7 @@ As of August 15th 2023, this project has just started, it will eventually:
 - Sign nostr events
 - Generate client relay messages (REQ, EVENT, CLOSE) 
 - Encode/Decode Shareable Identifiers (NIP-19)
+- Encrypt/Decrypt messages (NIP-04)
 
 ## Install in Xcode
 - Open your project or create a new project
@@ -199,6 +200,22 @@ nsec.privkey // "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670
 // Decode note (an event identifier)
 let note = try ShareableIdentifier("note1tcs2aj6m8hf3fxgp3k83200n3mw7ywnmm9wnmvram96awu45fmrshq2hcy")
 note.id // "5e20aecb5b3dd31499018d8f153df38edde23a7bd95d3db07dd975d772b44ec7"
+```
+
+## Encrypt/Decrypt messages (NIP-04)
+Note: NIP-04 will become obsolete. It is included here for backwards compatibility
+```swift
+// setup keys
+let aliceKeys = try Keys(privateKeyHex: "5c0c523f52a5b6fad39ed2403092df8cebc36318b39383bca6c00808626fab3a")
+let bobKeys = try Keys(privateKeyHex: "4b22aa260e4acb7021e32f38a6cdf4b673c6a277755bfce287e370c924dc936d")
+
+let clearMessage = "hello" // the message to encrypt
+        
+// Encrypt a message
+let encryptedMessage = Keys.encryptDirectMessageContent(withPrivatekey: aliceKeys.privateKeyHex(), pubkey: bobKeys.publicKeyHex(), content: clearMessage)! // <cipher text>
+                
+// Decrypt a message
+let decryptedMessage = Keys.decryptDirectMessageContent(withPrivateKey: bobKeys.privateKeyHex(), pubkey: aliceKeys.publicKeyHex(), content: encryptedMessage) // "hello"
 ```
 
 See /Tests/NostrEssentialsTests for more examples
