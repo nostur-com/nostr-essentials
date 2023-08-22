@@ -75,11 +75,11 @@ public struct Event: Codable {
 
     public mutating func sign(_ keys:Keys, replaceAuthor:Bool = false) throws -> Event {
         
-        guard replaceAuthor || self.pubkey == keys.publicKeyHex() else {
+        guard replaceAuthor || self.pubkey == keys.publicKeyHex else {
             throw EventError.PubkeyMismatch
         }
         
-        self.pubkey = keys.publicKeyHex()
+        self.pubkey = keys.publicKeyHex
         let sha256Serialized = self.computeIdDigest()
         let sig = try! keys.signature(for: sha256Serialized)
 

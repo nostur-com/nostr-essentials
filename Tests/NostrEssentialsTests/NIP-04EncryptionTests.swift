@@ -17,10 +17,10 @@ final class NIP_04EncryptionTests: XCTestCase {
     func testEncryptDecryptMessage() throws {
         let clearMessage = "hello"
         
-        let encryptedMessage = Keys.encryptDirectMessageContent(withPrivatekey: aliceKeys.privateKeyHex(), pubkey: bobKeys.publicKeyHex(), content: clearMessage)!
+        let encryptedMessage = Keys.encryptDirectMessageContent(withPrivatekey: aliceKeys.privateKeyHex, pubkey: bobKeys.publicKeyHex, content: clearMessage)!
         
         
-        let decryptedMessage = Keys.decryptDirectMessageContent(withPrivateKey: bobKeys.privateKeyHex(), pubkey: aliceKeys.publicKeyHex(), content: encryptedMessage)
+        let decryptedMessage = Keys.decryptDirectMessageContent(withPrivateKey: bobKeys.privateKeyHex, pubkey: aliceKeys.publicKeyHex, content: encryptedMessage)
         
         XCTAssertEqual(clearMessage, decryptedMessage)
     }
