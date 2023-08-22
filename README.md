@@ -27,15 +27,15 @@ import NostrEssentials
 
 // Generate keys
 guard let keys = try? Keys.newKeys() else { return }
-keys.privateKeyHex() // private key as a hex string
-keys.publicKeyHex() // public key as a hex string
+keys.privateKeyHex // private key as a hex string
+keys.publicKeyHex // public key as a hex string
 
 // Or import private key
 guard let keys = try? Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e") else { return }
 
 // keys as npub/nsec bech32 format 
-keys.nsec // "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc"
-keys.npub // "npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7"
+keys.nsec() // "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc"
+keys.npub() // "npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7"
 
 
 // Key conversion:
