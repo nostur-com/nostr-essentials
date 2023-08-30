@@ -15,6 +15,12 @@ public typealias InlineExpressionHandler = (_ matchingString: String, _ dataSour
 
 public class ContentParser {
     
+    public init(embedHandlers: [NSRegularExpression: EmbedExpressionHandler] = [:], inlineHandlers: [NSRegularExpression: InlineExpressionHandler] = [:], dataSources: [String: AnyObject] = [:]) {
+        self.embedHandlers = embedHandlers
+        self.inlineHandlers = inlineHandlers
+        self.dataSources = dataSources
+    }
+    
     public var embedHandlers: [NSRegularExpression: EmbedExpressionHandler] = [:]
     public var inlineHandlers: [NSRegularExpression: InlineExpressionHandler] = [:]
     public var dataSources: [String: AnyObject] = [:]
@@ -32,15 +38,15 @@ public class ContentParser {
         guard let combinedEmbedPatterns = try? NSRegularExpression(pattern: embedPatterns) else {
             throw ContentParserError.UnableToCreateRegex
         }
-
-//        let inlinePatterns = inlineHandlers
-//            .keys
-//            .map { $0.pattern }
-//            .joined(separator: "|")
-//
-//        guard let combinedInlinePatterns = try? NSRegularExpression(pattern: inlinePatterns) else {
-//            throw ContentParserError.UnableToCreateRegex
-//        }
+        
+        //        let inlinePatterns = inlineHandlers
+        //            .keys
+        //            .map { $0.pattern }
+        //            .joined(separator: "|")
+        //
+        //        guard let combinedInlinePatterns = try? NSRegularExpression(pattern: inlinePatterns) else {
+        //            throw ContentParserError.UnableToCreateRegex
+        //        }
         
         // The entire content will be turned into inline text parts, and embed parts
         
