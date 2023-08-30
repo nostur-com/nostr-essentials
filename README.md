@@ -13,6 +13,8 @@ As of August 15th 2023, this project has just started, it will eventually:
 - Generate client relay messages (REQ, EVENT, CLOSE) 
 - Encode/Decode Shareable Identifiers (NIP-19)
 - Encrypt/Decrypt messages (NIP-04)
+- Common nostr related regexes 
+- Content Parsing
 
 ## Install in Xcode
 - Open your project or create a new project
@@ -216,6 +218,54 @@ let encryptedMessage = Keys.encryptDirectMessageContent(withPrivatekey: aliceKey
                 
 // Decrypt a message
 let decryptedMessage = Keys.decryptDirectMessageContent(withPrivateKey: bobKeys.privateKeyHex(), pubkey: aliceKeys.publicKeyHex(), content: encryptedMessage) // "hello"
+```
+
+## Nostr regexes
+```swift
+let r = NostrRegexes.default
+        
+let exampleContent = "Hello npub1n0sturny6w9zn2wwexju3m6asu7zh7jnv2jt2kx6tlmfhs7thq0qnflahe! Is this your hex pubkey? 9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e?"
+
+let matches = r.matchingStrings(exampleContent, regex: r.cache[.npub]!)
+matches[0].first // "npub1n0sturny6w9zn2wwexju3m6asu7zh7jnv2jt2kx6tlmfhs7thq0qnflahe"
+
+let matches2 = r.matchingStrings(exampleContent, regex: r.cache[.npub]!)
+matches2[0].first // "9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e"
+```
+
+## Content Parsing
+```swift
+let r = NostrRegexes.default
+let parser = ContentParser()
+        
+// Define handlers to detect and replace 
+parser.embedHandlers[r.cache[.nostrUri]!] = // <Your handler here>
+parser.inlineHandlers[r.cache[.indexedTag]!] = // <Your handler here>
+parser.inlineHandlers[r.cache[.npub]!] = // <Your handler here>
+parser.dataSources["tags"] = // Your data source
+parser.dataSources["names"] = // Your data source
+
+// Example content
+let exampleContent = "Hello #[0]! Did you create #[1]? Is this your profile? nostr:nprofile1qqsfhc97pejd8z3f488vnfwgaawcw0ptlffk9f94trd9la5mc09ms8spzemhxue69uhhyetvv9ujumn0wd68ytnzv9hxgpvhe4f\nDo you know npub1lrnvvs6z78s9yjqxxr38uyqkmn34lsaxznnqgd877j4z2qej3j5s09qnw5?"
+
+let contentItems = try parser.parse(exampleContent)
+
+contentItems // Array of ContentItem for use in views, example:
+
+var body: some View {
+    ForEach(elements) { element in
+        switch element {
+        case ContentItem.text(let text):
+            Text(text)
+        case ContentItem.nprofile1(let nprofile):
+            Text(nprofile.identifier)
+        default:
+            Text("Unknown element")
+        }   
+    }
+}
+// See ContentParsingTests for a full working example, with example handlers and mock data sources
+
 ```
 
 See /Tests/NostrEssentialsTests for more examples
