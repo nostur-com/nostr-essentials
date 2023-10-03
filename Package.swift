@@ -7,7 +7,7 @@ let package = Package(
     name: "NostrEssentials",
     platforms: [
         .macOS(.v12),
-        .iOS(.v14)
+        .iOS(.v15)
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
@@ -18,7 +18,10 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(url: "https://github.com/GigaBitcoin/secp256k1.swift", .exact("0.9.2"))
+        .package(url: "https://github.com/GigaBitcoin/secp256k1.swift", .upToNextMajor(from: "0.9.2")),
+//        .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "2.0.0")),
+//        .package(url: "https://github.com/jedisct1/swift-sodium", branch: "master")
+        
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -26,7 +29,8 @@ let package = Package(
         .target(
             name: "NostrEssentials",
             dependencies: [
-                .product(name: "secp256k1", package: "secp256k1.swift")
+                .product(name: "secp256k1", package: "secp256k1.swift"),
+//                .product(name: "Sodium", package: "swift-sodium")
             ]
         ),
         .testTarget(
@@ -34,3 +38,17 @@ let package = Package(
             dependencies: ["NostrEssentials"]),
     ]
 )
+
+//let swiftSettings: [SwiftSetting] = [
+//    // -enable-bare-slash-regex becomes
+//    .enableUpcomingFeature("BareSlashRegexLiterals"),
+//    // -warn-concurrency becomes
+//    .enableUpcomingFeature("StrictConcurrency"),
+//    .unsafeFlags(["-enable-actor-data-race-checks"],
+//        .when(configuration: .debug)),
+//]
+//
+//for target in package.targets {
+//    target.swiftSettings = target.swiftSettings ?? []
+//    target.swiftSettings?.append(contentsOf: swiftSettings)
+//}
