@@ -37,7 +37,10 @@ let package = Package(
             name: "NostrEssentialsTests",
             dependencies: ["NostrEssentials"],
             resources: [
-                .copy("Resources/upload-test.png")
+                .copy("Resources/upload-test.png"),
+                .copy("Resources/coffeechain.png"),
+                .copy("Resources/beerstr.png"),
+                .copy("Resources/bitcoin.png")
             ]
         )
     ]

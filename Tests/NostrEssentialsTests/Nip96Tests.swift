@@ -38,34 +38,73 @@ final class Nip96Tests: XCTestCase {
 //        let filepath = Bundle.module.url(forResource: "nostur-add-nsecbunker", withExtension: "mov")
         let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
         let imageData = try Data(contentsOf: filepath!)
-        let mediaRequestParams = MediaRequestParams(apiUrl: "https://nostrcheck.me/api/v2/media", mediaData: imageData)
+        let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "https://nostrcheck.me/api/v2/media")!, mediaData: imageData)
         let uploader = Nip96Uploader()
+                
+        let expectation = self.expectation(description: "testMediaUpload")
         
-        var unsignedEvent = Event(
-            pubkey: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448",
-            content: "",
-            kind: 27235,
-            tags: [
-                Tag(["u", mediaRequestParams.apiUrl]),
-                Tag(["method", mediaRequestParams.method]),
-                Tag(["payload", mediaRequestParams.sha256hex]), // hash request.httpBody with upload-test.png as payload
-            ]
-        )
+        uploader.uploadingPublisher(for: mediaRequestBag, keys: keys)
+            .sink(receiveCompletion: { _ in
+                expectation.fulfill()
+            }, receiveValue: { mediaRequestBag in
+                uploader.processResponse(mediaRequestBag: mediaRequestBag)
+            })
+            .store(in: &subscriptions)
         
-        let signedEvent = try unsignedEvent.sign(keys)
-        //        print(NSString(string:signedEvent.json()!))
-        //        print(NSString(string:signedEvent.base64()!))
+        // Awaiting fulfilment of our expecation before
+        // performing our asserts:
+        waitForExpectations(timeout: 10)
         
-        guard let base64 = signedEvent.base64() else { throw NSError(domain: "Error", code: 999) }
-        let authorization = "Nostr \(base64)"
+        XCTAssertTrue(uploader.finished)
+        print(uploader.ready.first?.downloadUrl ?? "?")
+//        switch uploader.state {
+//        case .success(let url):
+//            
+//            print("Success: \(url)")
+//        case .error(let message):
+//            XCTFail("Expected .success state, error: \(message)")
+//        case .initializing:
+//            XCTFail("Expected .success state, still .initializing")
+//        case .uploading:
+//            XCTFail("Expected .success state, still .uploading")
+//        case .processing(let percentage):
+//            XCTFail("Expected .success state, still .processing: \(percentage ?? 0)")
+//        }
+    }
+    
+    func testMediaUploads() throws {
+        let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+        let apiUrl = URL(string: "https://nostrcheck.me/api/v2/media")!
+//        let filepath = Bundle.module.url(forResource: "nostur-add-nsecbunker", withExtension: "mov")
+        let filepath1 = Bundle.module.url(forResource: "upload-test", withExtension: "png")
+        let imageData1 = try Data(contentsOf: filepath1!)
+        let mediaRequestBag1 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData1)
+        
+        let filepath2 = Bundle.module.url(forResource: "bitcoin", withExtension: "png")
+        let imageData2 = try Data(contentsOf: filepath2!)
+        let mediaRequestBag2 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData2)
+        
+        let filepath3 = Bundle.module.url(forResource: "coffeechain", withExtension: "png")
+        let imageData3 = try Data(contentsOf: filepath3!)
+        let mediaRequestBag3 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData3)
+        
+        let filepath4 = Bundle.module.url(forResource: "beerstr", withExtension: "png")
+        let imageData4 = try Data(contentsOf: filepath4!)
+        let mediaRequestBag4 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData4)
+        
+        let uploader = Nip96Uploader()
         
         let expectation = self.expectation(description: "testMediaUpload")
         
-        try uploader.uploadingPublisher(for: mediaRequestParams, authorization: authorization)
+        let mediaRequestBags = [mediaRequestBag1, mediaRequestBag2, mediaRequestBag3, mediaRequestBag4]
+        
+        uploader.uploadingPublishers(for: mediaRequestBags, keys: keys)
             .sink(receiveCompletion: { _ in
                 expectation.fulfill()
-            }, receiveValue: { response in
-                uploader.processResponse(response, mediaRequestParams: mediaRequestParams, authorization: authorization)
+            }, receiveValue: { mediaRequestBags in
+                for mediaRequestBag in mediaRequestBags {
+                    uploader.processResponse(mediaRequestBag: mediaRequestBag)
+                }
             })
             .store(in: &subscriptions)
         
@@ -75,18 +114,11 @@ final class Nip96Tests: XCTestCase {
         
         // Asserting that our Combine pipeline yielded the
         // correct output:
-        switch uploader.state {
-        case .success(let url):
-            XCTAssert(true)
-            print("Success: \(url)")
-        case .error(let message):
-            XCTFail("Expected .success state, error: \(message)")
-        case .initializing:
-            XCTFail("Expected .success state, still .initializing")
-        case .uploading:
-            XCTFail("Expected .success state, still .uploading")
-        case .processing(let percentage):
-            XCTFail("Expected .success state, still .processing: \(percentage ?? 0)")
+        XCTAssertTrue(uploader.finished)
+        XCTAssertEqual(uploader.ready.count, 4)
+        XCTAssertEqual(uploader.queued.count, 0)
+        for item in uploader.ready {
+            print(item.downloadUrl ?? "?")
         }
     }
 }
