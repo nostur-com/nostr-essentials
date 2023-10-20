@@ -8,7 +8,11 @@
 import Foundation
 import secp256k1
 
-public struct Event: Codable {
+public struct Event: Codable, Equatable, Identifiable {
+    
+    public static func == (lhs: Event, rhs: Event) -> Bool {
+        lhs.id == rhs.id && lhs.sig == rhs.sig
+    }
     
     public var id: String
     public var pubkey: String
