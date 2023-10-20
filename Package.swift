@@ -35,7 +35,11 @@ let package = Package(
         ),
         .testTarget(
             name: "NostrEssentialsTests",
-            dependencies: ["NostrEssentials"]),
+            dependencies: ["NostrEssentials"],
+            resources: [
+                .copy("Resources/upload-test.png")
+            ]
+        )
     ]
 )
 
