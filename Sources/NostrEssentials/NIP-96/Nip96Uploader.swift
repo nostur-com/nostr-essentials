@@ -144,8 +144,12 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     
     public var uploadResponse:UploadResponse? {
         didSet {
-            if let url = uploadResponse?.nip94Event.tags.first(where: { $0.type == "url"} )?.value {
+            if let status = uploadResponse?.status, status == "processing", let percentage = uploadResponse?.percentage {
+                state = .processing(percentage: percentage)
+            }
+            else if let url = uploadResponse?.nip94Event.tags.first(where: { $0.type == "url"} )?.value {
                 downloadUrl = url
+                state = .success(url)
             }
             else {
                 state = .error(message: "Media service did not return url")
