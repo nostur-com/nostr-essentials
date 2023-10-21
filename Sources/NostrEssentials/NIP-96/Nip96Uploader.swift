@@ -57,6 +57,7 @@ public class Nip96Uploader: ObservableObject {
                 }
             }
             .decode(type: UploadResponse.self, decoder: decoder)
+            .receive(on: RunLoop.main)
             .map { response in
                 mediaRequestBag.uploadResponse = response
                 return mediaRequestBag
@@ -76,6 +77,7 @@ public class Nip96Uploader: ObservableObject {
                 URLSession.shared.dataTaskPublisher(for: mediaRequestBag.apiUrl)
                     .map(\.data)
                     .decode(type: UploadResponse.self, decoder: decoder)
+                    .receive(on: RunLoop.main)
                     .map { response in
                         mediaRequestBag.uploadResponse = response
                         return mediaRequestBag
@@ -92,6 +94,7 @@ public class Nip96Uploader: ObservableObject {
         case "processing":
             mediaRequestBag.state = .processing(percentage: response.percentage ?? 0)
             checkStatus(for: mediaRequestBag)
+                .receive(on: RunLoop.main)
                 .sink(
                     receiveCompletion: { _ in },
                     receiveValue: { mediaRequestBag in
