@@ -56,7 +56,7 @@ final class Nip96Tests: XCTestCase {
         waitForExpectations(timeout: 10)
         
         XCTAssertTrue(uploader.finished)
-        print(uploader.ready.first?.downloadUrl ?? "?")
+        print(uploader.queued.first?.downloadUrl ?? "?")
 //        switch uploader.state {
 //        case .success(let url):
 //            
@@ -115,9 +115,8 @@ final class Nip96Tests: XCTestCase {
         // Asserting that our Combine pipeline yielded the
         // correct output:
         XCTAssertTrue(uploader.finished)
-        XCTAssertEqual(uploader.ready.count, 4)
-        XCTAssertEqual(uploader.queued.count, 0)
-        for item in uploader.ready {
+        XCTAssertEqual(uploader.queued.filter { $0.finished }.count, 4)
+        for item in uploader.queued {
             print(item.downloadUrl ?? "?")
         }
     }
