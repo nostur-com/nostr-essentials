@@ -200,7 +200,7 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     
     public func getAuthorizationHeader(_ keys:Keys) throws -> String {
         var unsignedEvent = Event(
-            pubkey: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448",
+            pubkey: keys.publicKeyHex,
             content: "",
             kind: 27235,
             tags: [
@@ -230,6 +230,6 @@ public enum UploadState {
     case initializing
     case uploading
     case processing(percentage:Int?)
-    case success([String])
+    case success(String)
     case error(message:String)
 }
