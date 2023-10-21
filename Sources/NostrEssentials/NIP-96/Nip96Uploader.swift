@@ -8,13 +8,25 @@
 import Foundation
 import SwiftUI
 import Combine
+import Collections
 
 public class Nip96Uploader: ObservableObject {
-    @Published public var queued:Set<MediaRequestBag> = []
-    @Published public var ready:Set<MediaRequestBag> = []
+    @Published public var queued:OrderedSet<MediaRequestBag> = []
     
-    public var total:Int { (queued.count + ready.count) }
-    public var finished:Bool { ready.count != 0 && total == ready.count }
+    public var total:Int { queued.count }
+    public var finished:Bool {
+        let successCount = queued.filter({ bag in
+            switch bag.state {
+            case .success(_):
+                return true
+            default:
+                return false
+            }
+        }).count
+        return total == successCount && total != 0
+    }
+    
+    public init() { }
     
     private var subscriptions = Set<AnyCancellable>()
     
@@ -29,15 +41,20 @@ public class Nip96Uploader: ObservableObject {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         
-        queued.insert(mediaRequestBag)
+        queued.append(mediaRequestBag)
         
         return URLSession.shared
             .dataTaskPublisher(for: request)
             .tryMap() { element -> Data in
-                guard let httpResponse = element.response as? HTTPURLResponse,
-                      httpResponse.statusCode == 200 || httpResponse.statusCode == 202
-                else { throw URLError(.badServerResponse) }
-                return element.data
+                let httpResponse = element.response as? HTTPURLResponse
+                switch httpResponse?.statusCode {
+                case 200,202:
+                    return element.data
+                case 401:
+                    throw URLError(.userAuthenticationRequired)
+                default:
+                    throw URLError(.badServerResponse)
+                }
             }
             .decode(type: UploadResponse.self, decoder: decoder)
             .map { response in
@@ -51,7 +68,7 @@ public class Nip96Uploader: ObservableObject {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         
-        let timer = Timer.publish(every: 0.25, on: .main, in: .common)
+        let timer = Timer.publish(every: 2.5, on: .main, in: .common)
             .autoconnect()
         
         return timer
@@ -84,15 +101,12 @@ public class Nip96Uploader: ObservableObject {
                         }
                         else if response.status == "completed" || response.status == "success"  {
                             mediaRequestBag.uploadResponse = response
-                            self.queued.remove(mediaRequestBag)
-                            self.ready.insert(mediaRequestBag)
                         }
                     })
                 .store(in: &self.subscriptions)
             
         case "success", "completed":
-            self.queued.remove(mediaRequestBag)
-            self.ready.insert(mediaRequestBag)
+            mediaRequestBag.uploadResponse = response
         default:
             return
         }
@@ -140,6 +154,15 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     }
     @Published public var state:UploadState = .initializing
     @Published public var downloadUrl:String?
+    
+    public var finished:Bool { // helper because we can't do == on enum with param
+        switch state {
+        case .success(_):
+            return true
+        default:
+            return false
+        }
+    }
     
     private let uploadtype:String // "avatar" "banner" or "media"
     private let filename:String
