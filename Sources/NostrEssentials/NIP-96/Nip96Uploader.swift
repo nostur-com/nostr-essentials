@@ -48,7 +48,7 @@ public class Nip96Uploader: ObservableObject {
             .tryMap() { element -> Data in
                 let httpResponse = element.response as? HTTPURLResponse
                 switch httpResponse?.statusCode {
-                case 200,202:
+                case 200,201,202:
                     return element.data
                 case 401:
                     throw URLError(.userAuthenticationRequired)
