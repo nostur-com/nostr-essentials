@@ -72,7 +72,7 @@ final class Nip96Tests: XCTestCase {
 //        }
     }
     
-    func testMediaUploads() throws {
+    func testMultipleMediaUploads() throws {
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
         let apiUrl = URL(string: "https://nostrcheck.me/api/v2/media")!
 //        let filepath = Bundle.module.url(forResource: "nostur-add-nsecbunker", withExtension: "mov")
@@ -119,5 +119,16 @@ final class Nip96Tests: XCTestCase {
         for item in uploader.queued {
             print(item.downloadUrl ?? "?")
         }
+    }
+    
+    func testPayloadHash() throws {
+        guard let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png") else { return }
+    
+        let imageData = try! Data(contentsOf: filepath)
+      
+        let sha256hex = imageData.sha256().hexEncodedString() // "2211458b50e7354b40e7261ebc7ad735fdb26bbb14d8f53c3465e58c7b035830"
+        
+        // upload-test.png should hash to this:
+        XCTAssertEqual(sha256hex, "2211458b50e7354b40e7261ebc7ad735fdb26bbb14d8f53c3465e58c7b035830")
     }
 }

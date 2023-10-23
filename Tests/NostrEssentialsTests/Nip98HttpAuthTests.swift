@@ -66,39 +66,6 @@ final class Nip98HttpAuthTests: XCTestCase {
         
     }
     
-    func testPayloadHash() throws {
-        guard let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png") else { return }
-        
-        let url = URL(string: "https://nostrcheck.me/api/v2/media")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        
-        let boundary = "test-boundry"
-        let contentType = "multipart/form-data; boundary=\(boundary)"
-        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
-        
-        let body = NSMutableData()
-        
-        let imageData = try! Data(contentsOf: filepath)
-        
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"mediafile\"; filename=\"image.png\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/png\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        
-        body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"uploadtype\"\r\n\r\n".data(using: .utf8)!)
-        body.append("media".data(using: .utf8)!)
-        
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        request.httpBody = body as Data
-        
-        let sha256hex = imageData.sha256().hexEncodedString() // "2211458b50e7354b40e7261ebc7ad735fdb26bbb14d8f53c3465e58c7b035830"
-        
-        // upload-test.png added to body should hash to this:
-        XCTAssertEqual(sha256hex, "2211458b50e7354b40e7261ebc7ad735fdb26bbb14d8f53c3465e58c7b035830")
-    }
-    
     func testEncodeEventToBase64() throws {
         let unsignedEvent = Event(
             pubkey: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448",
