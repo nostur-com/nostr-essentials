@@ -47,7 +47,7 @@ final class Nip98HttpAuthTests: XCTestCase {
             tags: [
                 Tag(["u", "https://nostrcheck.me/api/v2/media"]),
                 Tag(["method", "POST"]),
-                Tag(["payload", "c8c32742c215a86b96e122810883a8e7a01ed0a05f24debc300997740c7416da"]), // hash request.httpBody with upload-test.png as payload
+                Tag(["payload", "c8c32742c215a86b96e122810883a8e7a01ed0a05f24debc300997740c7416da"]), // hash of media file
             ]
         )
         
