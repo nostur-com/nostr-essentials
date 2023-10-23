@@ -15,6 +15,8 @@ As of August 15th 2023, this project has just started, it will eventually:
 - Encrypt/Decrypt messages (NIP-04)
 - Common nostr related regexes 
 - Content Parsing
+- Media uploading to NIP-96 compatible servers (NIP-96)
+- HTTP Auth (NIP-98)
 
 ## Install in Xcode
 - Open your project or create a new project
@@ -73,6 +75,8 @@ event.json() // <json string of the event> or nil
 
 ### Sign nostr events
 ```swift
+import NostrEssentials
+
 let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
 
 var unsignedEvent = Event(
@@ -207,6 +211,8 @@ note.id // "5e20aecb5b3dd31499018d8f153df38edde23a7bd95d3db07dd975d772b44ec7"
 ## Encrypt/Decrypt messages (NIP-04)
 Note: NIP-04 will become obsolete. It is included here for backwards compatibility
 ```swift
+import NostrEssentials
+
 // setup keys
 let aliceKeys = try Keys(privateKeyHex: "5c0c523f52a5b6fad39ed2403092df8cebc36318b39383bca6c00808626fab3a")
 let bobKeys = try Keys(privateKeyHex: "4b22aa260e4acb7021e32f38a6cdf4b673c6a277755bfce287e370c924dc936d")
@@ -222,6 +228,8 @@ let decryptedMessage = Keys.decryptDirectMessageContent(withPrivateKey: bobKeys.
 
 ## Nostr regexes
 ```swift
+import NostrEssentials
+
 let r = NostrRegexes.default // create and cache NSRegularExpression instances ahead of time for reuse (performance)
         
 let exampleContent = "Hello npub1n0sturny6w9zn2wwexju3m6asu7zh7jnv2jt2kx6tlmfhs7thq0qnflahe! Is this your hex pubkey? 9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e?"
@@ -235,6 +243,8 @@ matches2[0].first // "9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3
 
 ## Content Parsing
 ```swift
+import NostrEssentials
+
 let r = NostrRegexes.default
 let parser = ContentParser()
         
@@ -267,5 +277,64 @@ var body: some View {
 // See ContentParsingTests for a full working example, with example handlers and mock data sources
 
 ```
+
+## HTTP Authentication (NIP-98)
+```swift
+import NostrEssentials
+
+let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+
+// Sign a 27235 event with url and method in tags      
+var unsignedEvent = Event(
+    pubkey: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448",
+    content: "",
+    kind: 27235,
+    tags: [
+        Tag(["u", "https://some.server.address/auth"]),
+        Tag(["method", "GET"])
+    ]
+
+guard let signedEvent = try? unsignedEvent.sign(keys) else { return }
+
+// Convert to base64 and put it in the Authorization header, prefix with "Nostr "
+guard let base64 = signedEvent.base64() else { return }
+let authorization = "Nostr \(base64)"
+
+var request = URLRequest(url: "https://some.server.address/auth")
+request.setValue(authorization, forHTTPHeaderField: "Authorization")
+
+// Continue other regular URLRequest stuff
+```
+
+## Media uploading (NIP-96)
+```swift
+import NostrEssentials
+import Combine
+
+var subscriptions: Set<AnyCancellable> = []
+let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+
+let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
+let imageData = try Data(contentsOf: filepath!)
+let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "https://nip96.server.url.here")!, mediaData: imageData)
+
+let uploader = Nip96Uploader()
+
+uploader.uploadingPublisher(for: mediaRequestBag, keys: keys)
+    .sink(
+        receiveCompletion: { _ in 
+        }, 
+        receiveValue: { mediaRequestBag in
+            uploader.processResponse(mediaRequestBag: mediaRequestBag)
+            if (uploader.finished) {
+                print("Uploaded image url is: \(mediaRequestBags.downloadUrl ?? "")")
+            }
+        }
+    )
+    .store(in: &subscriptions)
+
+// Multiple simultaneous uploads is also supported, see Tests for examples.
+```
+
 
 See /Tests/NostrEssentialsTests for more examples
