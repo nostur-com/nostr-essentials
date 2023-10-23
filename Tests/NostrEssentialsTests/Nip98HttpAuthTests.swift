@@ -66,7 +66,7 @@ final class Nip98HttpAuthTests: XCTestCase {
         
     }
     
-    func testHashBody() throws {
+    func testPayloadHash() throws {
         guard let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png") else { return }
         
         let url = URL(string: "https://nostrcheck.me/api/v2/media")!
@@ -93,10 +93,10 @@ final class Nip98HttpAuthTests: XCTestCase {
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
         request.httpBody = body as Data
         
-        let sha256hex = request.httpBody?.sha256().hexEncodedString() // "c3ec433c6ac7c7154f276da5954c418421530ab5c24069a294c8d6889591a0ba"
+        let sha256hex = imageData.sha256().hexEncodedString() // "2211458b50e7354b40e7261ebc7ad735fdb26bbb14d8f53c3465e58c7b035830"
         
         // upload-test.png added to body should hash to this:
-        XCTAssertEqual(sha256hex, "c3ec433c6ac7c7154f276da5954c418421530ab5c24069a294c8d6889591a0ba")
+        XCTAssertEqual(sha256hex, "2211458b50e7354b40e7261ebc7ad735fdb26bbb14d8f53c3465e58c7b035830")
     }
     
     func testEncodeEventToBase64() throws {
