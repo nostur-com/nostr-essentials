@@ -198,7 +198,8 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
         
         self.httpBody = body as Data
-        self.sha256hex = mediaData.sha256().hexEncodedString()
+        
+        self.sha256hex = httpBody.sha256().hexEncodedString()
     }
     
     public func getAuthorizationHeader(_ keys:Keys) throws -> String {
@@ -209,7 +210,7 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
             tags: [
                 Tag(["u", apiUrl.absoluteString]),
                 Tag(["method", method]),
-                Tag(["payload", sha256hex]), // hash request.httpBody with upload-test.png as payload
+                Tag(["payload", sha256hex]), // hash of entire request.httpBody
             ]
         )
         
