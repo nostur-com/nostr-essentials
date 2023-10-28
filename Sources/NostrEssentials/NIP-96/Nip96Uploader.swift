@@ -255,16 +255,6 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     }
 }
 
-public class MultiUpload: ObservableObject {
-    public let mediaRequestBag:MediaRequestBag
-    @Published public var state:UploadState = .initializing
-    
-    init(mediaRequestBag: MediaRequestBag) {
-        self.mediaRequestBag = mediaRequestBag
-        self.state = state
-    }
-}
-
 public enum UploadState {
     case initializing
     case uploading(percentage:Int?)
