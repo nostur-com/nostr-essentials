@@ -31,8 +31,7 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
     
     
     public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
-        let progress = Float(totalBytesSent) / Float(totalBytesExpectedToSend)
-        progressSubject.send(progress)
+        progressSubject.send(Float(totalBytesSent))
     }
     
     private var progressSubject = PassthroughSubject<Float, Never>()
@@ -56,8 +55,11 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
         mediaRequestBag.state = .uploading(percentage: 0)
         progressSubject
             .receive(on: RunLoop.main)
-            .sink { progress in
-                mediaRequestBag.state = .uploading(percentage: min(100,Int(ceil(progress * 100))))
+            .sink { totalBytesSent in
+                let progress = totalBytesSent / Float(mediaRequestBag.contentLength)
+                if progress > 0.01 && progress < 1.0 {
+                    mediaRequestBag.state = .uploading(percentage: min(100,Int(ceil(progress * 100))))
+                }
             }
             .store(in: &subscriptions)
         
@@ -174,6 +176,7 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     public var httpBody:Data
     public var sha256hex:String
     public var boundary:String
+    public var contentLength:Int
     
     public var uploadResponse:UploadResponse? {
         didSet {
@@ -230,6 +233,7 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
         self.httpBody = body as Data
         
         self.sha256hex = httpBody.sha256().hexEncodedString()
+        self.contentLength = self.httpBody.count
     }
     
     public func getAuthorizationHeader(_ keys:Keys) throws -> String {
