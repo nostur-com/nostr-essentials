@@ -55,6 +55,7 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
         
         mediaRequestBag.state = .uploading(percentage: 0)
         progressSubject
+            .receive(on: RunLoop.main)
             .sink { progress in
                 mediaRequestBag.state = .uploading(percentage: min(100,Int(ceil(progress * 100))))
             }
