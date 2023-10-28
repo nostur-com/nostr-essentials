@@ -76,7 +76,9 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
                     case 200, 201, 202:
                         do {
                             let uploadResponse = try decoder.decode(UploadResponse.self, from: data)
-                            mediaRequestBag.uploadResponse = uploadResponse
+                            DispatchQueue.main.async {
+                                mediaRequestBag.uploadResponse = uploadResponse
+                            }
                             promise(.success(mediaRequestBag))
                         } catch {
                             promise(.failure(error))
