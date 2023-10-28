@@ -10,7 +10,7 @@ import SwiftUI
 import Combine
 import Collections
 
-public class Nip96Uploader: ObservableObject {
+public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
     @Published public var queued:OrderedSet<MediaRequestBag> = []
     
     public var total:Int { queued.count }
@@ -26,44 +26,69 @@ public class Nip96Uploader: ObservableObject {
         return total == successCount && total != 0
     }
     
-    public init() { }
+    public override init() { }
     
+    
+    
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
+        let progress = Float(totalBytesSent) / Float(totalBytesExpectedToSend)
+        progressSubject.send(progress)
+    }
+    
+    private var progressSubject = PassthroughSubject<Float, Never>()
     private var subscriptions = Set<AnyCancellable>()
     
     public func uploadingPublisher(for mediaRequestBag: MediaRequestBag, keys: Keys) -> AnyPublisher<MediaRequestBag, Error> {
         let authorization = (try? mediaRequestBag.getAuthorizationHeader(keys)) ?? ""
+            
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
+        
         var request = URLRequest(url: mediaRequestBag.apiUrl)
         request.httpMethod = "POST"
         let contentType = "multipart/form-data; boundary=\(mediaRequestBag.boundary)"
         request.setValue(contentType, forHTTPHeaderField: "Content-Type")
         request.setValue(authorization, forHTTPHeaderField: "Authorization")
+        request.setValue("\(mediaRequestBag.httpBody.count)", forHTTPHeaderField: "Content-Length")
+//        print("Sending header: \(authorization)")
         request.httpBody = mediaRequestBag.httpBody
+        
+        mediaRequestBag.state = .uploading(percentage: 0)
+        progressSubject
+            .sink { progress in
+                mediaRequestBag.state = .uploading(percentage: min(100,Int(ceil(progress * 100))))
+            }
+            .store(in: &subscriptions)
+        
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         
         queued.append(mediaRequestBag)
-        
-        return URLSession.shared
-            .dataTaskPublisher(for: request)
-            .tryMap() { element -> Data in
-                let httpResponse = element.response as? HTTPURLResponse
-                switch httpResponse?.statusCode {
-                case 200,201,202:
-                    return element.data
-                case 401:
-                    throw URLError(.userAuthenticationRequired)
-                default:
-                    throw URLError(.badServerResponse)
+
+        return Future { promise in
+            session.dataTask(with: request) { (data, response, error) in
+                guard let data = data, let httpResponse = response as? HTTPURLResponse else {
+                    promise(.failure(URLError(.badServerResponse)))
+                    return
                 }
-            }
-            .decode(type: UploadResponse.self, decoder: decoder)
-            .receive(on: RunLoop.main)
-            .map { response in
-                mediaRequestBag.uploadResponse = response
-                return mediaRequestBag
-            }
-            .eraseToAnyPublisher()
+                switch httpResponse.statusCode {
+                    case 200, 201, 202:
+                        do {
+                            let uploadResponse = try decoder.decode(UploadResponse.self, from: data)
+                            mediaRequestBag.uploadResponse = uploadResponse
+                            promise(.success(mediaRequestBag))
+                        } catch {
+                            promise(.failure(error))
+                        }
+                    case 401:
+                        promise(.failure(URLError(.userAuthenticationRequired)))
+                    default:
+                        promise(.failure(URLError(.badServerResponse)))
+                }
+            }.resume()
+        }.eraseToAnyPublisher()
     }
+
     
     public func checkStatus(for mediaRequestBag: MediaRequestBag) -> AnyPublisher<MediaRequestBag, Error> {
         let decoder = JSONDecoder()
@@ -79,6 +104,7 @@ public class Nip96Uploader: ObservableObject {
                     .decode(type: UploadResponse.self, decoder: decoder)
                     .receive(on: RunLoop.main)
                     .map { response in
+//                        print("Media uploading (checkStatus): UploadResponse: \(response)")
                         mediaRequestBag.uploadResponse = response
                         return mediaRequestBag
                     }
@@ -99,6 +125,7 @@ public class Nip96Uploader: ObservableObject {
                     receiveCompletion: { _ in },
                     receiveValue: { mediaRequestBag in
                         guard let response = mediaRequestBag.uploadResponse else { return }
+//                        print("Media uploading (processResponse): UploadResponse: \(response)")
                         if response.status == "processing" {
                             mediaRequestBag.state = .processing(percentage: response.percentage ?? 0)
                         }
@@ -215,6 +242,7 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
         )
         
         let signedEvent = try unsignedEvent.sign(keys)
+//        print("Sending 27235: \(signedEvent.json() ?? "")")
         guard let base64 = signedEvent.base64() else { throw NSError(domain: "Unable to create json() or base64", code: 999) }
         return "Nostr \(base64)"
     }
@@ -232,7 +260,7 @@ public class MultiUpload: ObservableObject {
 
 public enum UploadState {
     case initializing
-    case uploading
+    case uploading(percentage:Int?)
     case processing(percentage:Int?)
     case success(String)
     case error(message:String)
