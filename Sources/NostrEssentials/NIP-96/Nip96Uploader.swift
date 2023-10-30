@@ -217,11 +217,13 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
         
         let body = NSMutableData()
         
+        let contentType = filename.suffix(4) == ".png" ? "image/png" : "image/jpg"
+        
         let boundary = UUID().uuidString
         self.boundary = boundary
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"mediafile\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/png\r\n\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
         body.append(mediaData)
         
         body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
