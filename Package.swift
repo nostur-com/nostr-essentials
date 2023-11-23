@@ -18,6 +18,7 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
+        .package(url: "https://github.com/luizmb/CombineWebSocket", .revision("7ade1417198ad7b196858dd0d0601818adae5725")),
         .package(url: "https://github.com/GigaBitcoin/secp256k1.swift", .upToNextMinor(from: "0.9.2")),
         .package(url: "https://github.com/apple/swift-collections.git", .upToNextMinor(from: "1.0.0")) // or `.upToNextMajor
 //        .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "2.0.0")),
@@ -30,6 +31,7 @@ let package = Package(
         .target(
             name: "NostrEssentials",
             dependencies: [
+                .product(name: "CombineWebSocket", package: "CombineWebSocket"),
                 .product(name: "secp256k1", package: "secp256k1.swift"),
                 .product(name: "Collections", package: "swift-collections")
 //                .product(name: "Sodium", package: "swift-sodium")

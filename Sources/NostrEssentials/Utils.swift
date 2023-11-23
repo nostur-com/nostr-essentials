@@ -14,3 +14,31 @@ public func toJson(_ object:Encodable) -> String? {
     }
     return jsonString
 }
+
+// Removes trailing slash, but only if its not part of path
+// Makes url lowercased
+// Removes :80 or :443
+public func normalizeRelayUrl(_ url:String) -> String {
+    let step1 = url.replacingOccurrences(of: "://", with: "")
+    
+    if (step1.components(separatedBy:"/").count - 1) == 1 && url.suffix(1) == "/" {
+        return url.dropLast(1)
+            .lowercased()
+            .replacingOccurrences(of: ":80", with: "")
+            .replacingOccurrences(of: ":443", with: "")
+    }
+    
+    return url
+        .lowercased()
+        .replacingOccurrences(of: ":80", with: "")
+        .replacingOccurrences(of: ":443", with: "")
+    
+    // "wss://example.com/" -> "wssexample.com/"
+    // "wss://example.com" -> "wssexample.com"
+    // "wss://example.com/path" -> "wssexample.com/path"
+    // "wss://example.com/path/" -> "wssexample.com/path/"
+    // "wss://example.com:80/" -> "wssexample.com/"
+    // "wss://example.com:443" -> "wssexample.com"
+    // "wss://example.com:443/path" -> "wssexample.com/path"
+    // "wss://example.com:443/path/" -> "wssexample.com/path/"
+}
