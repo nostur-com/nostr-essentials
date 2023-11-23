@@ -17,6 +17,7 @@ As of August 15th 2023, this project has just started, it will eventually:
 - Content Parsing
 - Media uploading to NIP-96 compatible servers (NIP-96)
 - HTTP Auth (NIP-98)
+- Connecting to relays, sending/receiving
 
 ## Install in Xcode
 - Open your project or create a new project
@@ -336,5 +337,32 @@ uploader.uploadingPublisher(for: mediaRequestBag, keys: keys)
 // Multiple simultaneous uploads is also supported, see Tests for examples.
 ```
 
+## Connecting to relays, sending/receiving
+
+```swift
+import NostrEssentials
+
+// Set up connection pool, myApp should implement RelayConnectionDelegate
+let pool = ConnectionPool(delegate: myApp)
+
+// Configure a relay to connect to
+let myRelayConfig = RelayConfig(url: "wss://nos.lol/", read: true, write: true)
+
+// Add the relay to the connection pool
+let myRelayConnection = pool.addConnection(myFirstRelay)
+
+// Connect to the relay
+myRelayConnection.connect()
+
+// create a nostr request
+let lastMessageFromPubkey = ClientMessage(type: .REQ, filters: [Filters(authors: Set(["9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e"]), limit: 1)])
+
+ // send request to the pool (which sends it to all "read" relays)
+pool.sendMessage(lastMessageFromPubkey) // .connect() might not be completed here yet, but message will be queued and sent after connect.
+
+// Receiving the response should be handled in myApp (RelayConnectionDelegate)
+// See Tests/NostrEssentialsTests for a full working example.
+
+```
 
 See /Tests/NostrEssentialsTests for more examples
