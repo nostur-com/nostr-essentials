@@ -218,3 +218,11 @@ public struct SetMetadata: Codable {
     
     public func json() -> String? { toJson(self) }
 }
+
+extension Event {
+    static func fromJson(_ jsonString: String) -> Event? {
+        guard let exampleEventData = jsonString.data(using: .utf8) else { return nil }
+        let decoder = JSONDecoder()
+        return try? decoder.decode(Event.self, from: exampleEventData)
+    }
+}
