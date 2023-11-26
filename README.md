@@ -18,6 +18,7 @@ As of August 15th 2023, this project has just started, it will eventually:
 - Media uploading to NIP-96 compatible servers (NIP-96)
 - HTTP Auth (NIP-98)
 - Connecting to relays, sending/receiving
+- Parse relay messages
 
 ## Install in Xcode
 - Open your project or create a new project
@@ -363,6 +364,23 @@ pool.sendMessage(lastMessageFromPubkey) // .connect() might not be completed her
 // Receiving the response should be handled in myApp (RelayConnectionDelegate)
 // See Tests/NostrEssentialsTests for a full working example.
 
+```
+
+## Parse relay messages
+
+```swift
+import NostrEssentials
+
+// Example response as returned in RelayConnectionDelegate.didReceiveMessage(_ url: String, message: String) { }
+let message = ###"["EVENT","SUBID-1",{"pubkey":"9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e","content":"Just ignore labels outside WoT and increase significance of labels from direct follows.","id":"c948ad1d37abfafd887d74194f5649cce3c94711aa5eeed7e8a4ee5e4fd1dbe1","created_at":1700163275,"sig":"ed93a1dcba18e47bb9b0ed2fa98316db6cde787f51aa13ba8f08fd2f8c0775749122042bc3c6242c203e1840b1948f3b590d56fe3668cf2807ef556bdf29285e","kind":1,"tags":[["e","9e0f6c6e2a257a4b1a888dbadc150fa219ca269447f0da0d14081493f2005dc2","","root"],["e","31a21327b74818221f1b79d09e0e4552eeeb954be4e818cb9e0283524cf92f30","","reply"],["p","8a981f1ae3fab3300b548c4f20654cb0f1d350498c4b66849b73e8546001dca0"],["p","9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e"],["client","Nostur"]]}]"###
+let url = "wss://nos.lol" // relay url the response came from
+
+if let parsedEvent = try? parseRelayMessage(text: message, relay: url),
+    let event = parsedEvent.event,
+    let subId = parsedEvent.subscriptionId {
+    print(subId) // "SUBID-1"
+    print(event.id) // "c948ad1d37abfafd887d74194f5649cce3c94711aa5eeed7e8a4ee5e4fd1dbe1"
+}
 ```
 
 See /Tests/NostrEssentialsTests for more examples
