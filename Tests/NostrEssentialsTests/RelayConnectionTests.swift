@@ -1,5 +1,5 @@
 //
-//  RelayConnections.swift
+//  RelayConnectionTests.swift
 //  
 //
 //  Created by Fabian Lachman on 23/11/2023.
@@ -90,6 +90,27 @@ final class RelayConnectionTests: XCTestCase {
         waitForExpectations(timeout: 10)
         XCTAssertEqual(myApp.testDidConnect, true)
         XCTAssertEqual(myApp.testDidReceiveMessage, true)
+    }
+    
+    
+    func testParseRelayEventResponse() throws {
+        // Example response as returned in RelayConnectionDelegate.didReceiveMessage(_ url: String, message: String) { }
+        let message = ###"["EVENT","049F01AF-CA70-4C10-972B-FDF066465DD0",{"pubkey":"9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e","content":"Just ignore labels outside WoT and increase significance of labels from direct follows.","id":"c948ad1d37abfafd887d74194f5649cce3c94711aa5eeed7e8a4ee5e4fd1dbe1","created_at":1700163275,"sig":"ed93a1dcba18e47bb9b0ed2fa98316db6cde787f51aa13ba8f08fd2f8c0775749122042bc3c6242c203e1840b1948f3b590d56fe3668cf2807ef556bdf29285e","kind":1,"tags":[["e","9e0f6c6e2a257a4b1a888dbadc150fa219ca269447f0da0d14081493f2005dc2","","root"],["e","31a21327b74818221f1b79d09e0e4552eeeb954be4e818cb9e0283524cf92f30","","reply"],["p","8a981f1ae3fab3300b548c4f20654cb0f1d350498c4b66849b73e8546001dca0"],["p","9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e"],["client","Nostur"]]}]"###
+        let url = "wss://nos.lol" // relay url
+        
+        let parsedEvent = try parseRelayMessage(text: message, relay: url)
+        
+        // Reading values
+        XCTAssertEqual(parsedEvent.subscriptionId, "049F01AF-CA70-4C10-972B-FDF066465DD0")
+        XCTAssertEqual(parsedEvent.event?.id, "c948ad1d37abfafd887d74194f5649cce3c94711aa5eeed7e8a4ee5e4fd1dbe1")
+        XCTAssertEqual(parsedEvent.event?.content, "Just ignore labels outside WoT and increase significance of labels from direct follows.")
+        XCTAssertEqual(parsedEvent.event?.pubkey, "9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e")
+        XCTAssertEqual(parsedEvent.event?.sig, "ed93a1dcba18e47bb9b0ed2fa98316db6cde787f51aa13ba8f08fd2f8c0775749122042bc3c6242c203e1840b1948f3b590d56fe3668cf2807ef556bdf29285e")
+        XCTAssertEqual(parsedEvent.event?.tags.count, 5)
+        XCTAssertEqual(parsedEvent.event?.tags.first?.type, "e")
+        XCTAssertEqual(parsedEvent.event?.tags.first?.value, "9e0f6c6e2a257a4b1a888dbadc150fa219ca269447f0da0d14081493f2005dc2")
+        XCTAssertEqual(parsedEvent.event?.tags.last?.type, "client")
+        XCTAssertEqual(parsedEvent.event?.tags.last?.value, "Nostur")
     }
 
 }
