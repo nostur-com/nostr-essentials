@@ -183,9 +183,22 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
             if let status = uploadResponse?.status, status == "processing", let percentage = uploadResponse?.percentage {
                 state = .processing(percentage: percentage)
             }
-            else if let url = uploadResponse?.nip94Event.tags.first(where: { $0.type == "url"} )?.value {
-                downloadUrl = url
-                state = .success(url)
+            else if let uploadResponse = uploadResponse {
+                if let url = uploadResponse.nip94Event.tags.first(where: { $0.type == "url"} )?.value {
+                    
+                    if let dim = uploadResponse.nip94Event.tags.first(where: { $0.type == "dim"} )?.value {
+                        self.dim = dim
+                    }
+                    if let hash = uploadResponse.nip94Event.tags.first(where: { $0.type == "x"} )?.value {
+                        self.hash = hash
+                    }
+                    
+                    downloadUrl = url
+                    state = .success(url)
+                }
+                else {
+                    state = .error(message: "Media service did not return url")
+                }
             }
             else {
                 state = .error(message: "Media service did not return url")
@@ -194,6 +207,8 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     }
     @Published public var state:UploadState = .initializing
     @Published public var downloadUrl:String?
+    public var dim:String? // "640x480" dimensions of processed image in imeta format  (DIP-01)
+    public var hash:String? // hash of processed image
     
     public var finished:Bool { // helper because we can't do == on enum with param
         switch state {

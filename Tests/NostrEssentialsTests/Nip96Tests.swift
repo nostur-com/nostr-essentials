@@ -118,6 +118,8 @@ final class Nip96Tests: XCTestCase {
         XCTAssertEqual(uploader.queued.filter { $0.finished }.count, 4)
         for item in uploader.queued {
             print(item.downloadUrl ?? "?")
+            print(item.dim ?? "?")
+            print(item.hash ?? "?")
         }
     }
     
