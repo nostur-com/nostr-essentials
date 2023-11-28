@@ -32,7 +32,7 @@ public struct Event: Codable, Equatable, Identifiable {
         case sig
     }
 
-    init(pubkey:String = "", content:SetMetadata) {
+    public init(pubkey:String = "", content:SetMetadata) {
         self.created_at = Int(Date.now.timeIntervalSince1970)
         self.kind = 0
         self.content = content.json() ?? ""
@@ -165,14 +165,14 @@ public struct Event: Codable, Equatable, Identifiable {
 
 // Need this one in addition to Event because id must be 0 and should have no sig
 private struct SerializableEvent: Encodable {
-    let id = 0
-    let pubkey: String
-    let created_at: Int
-    let kind: Int
-    let tags: [Tag]
-    let content: String
+    public let id = 0
+    public let pubkey: String
+    public let created_at: Int
+    public let kind: Int
+    public let tags: [Tag]
+    public let content: String
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
         try container.encode(id)
         try container.encode(pubkey)
@@ -220,7 +220,7 @@ public struct SetMetadata: Codable {
 }
 
 extension Event {
-    static func fromJson(_ jsonString: String) -> Event? {
+    static public func fromJson(_ jsonString: String) -> Event? {
         guard let exampleEventData = jsonString.data(using: .utf8) else { return nil }
         let decoder = JSONDecoder()
         return try? decoder.decode(Event.self, from: exampleEventData)
