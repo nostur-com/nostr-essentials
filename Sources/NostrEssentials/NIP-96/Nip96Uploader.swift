@@ -10,8 +10,8 @@ import SwiftUI
 import Combine
 import Collections
 
-public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
-    @Published public var queued:OrderedSet<MediaRequestBag> = []
+public class Nip96Uploader: NSObject, ObservableObject {
+    @Published public var queued:[MediaRequestBag] = []
     
     public var total:Int { queued.count }
     public var finished:Bool {
@@ -28,20 +28,14 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
     
     public override init() { }
     
-    
-    
-    public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
-        progressSubject.send(Float(totalBytesSent))
-    }
-    
-    private var progressSubject = PassthroughSubject<Float, Never>()
     private var subscriptions = Set<AnyCancellable>()
+    public var onFinish: (() -> Void)? = nil
     
     public func uploadingPublisher(for mediaRequestBag: MediaRequestBag, keys: Keys) -> AnyPublisher<MediaRequestBag, Error> {
         let authorization = (try? mediaRequestBag.getAuthorizationHeader(keys)) ?? ""
             
         let config = URLSessionConfiguration.default
-        let session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
+        let session = URLSession(configuration: config, delegate: mediaRequestBag, delegateQueue: nil)
         
         var request = URLRequest(url: mediaRequestBag.apiUrl)
         request.httpMethod = "POST"
@@ -53,20 +47,9 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
         request.httpBody = mediaRequestBag.httpBody
         
         mediaRequestBag.state = .uploading(percentage: 0)
-        progressSubject
-            .receive(on: RunLoop.main)
-            .sink { totalBytesSent in
-                let progress = totalBytesSent / Float(mediaRequestBag.contentLength)
-                if progress > 0.01 && progress < 1.0 {
-                    mediaRequestBag.state = .uploading(percentage: min(100,Int(ceil(progress * 100))))
-                }
-            }
-            .store(in: &subscriptions)
-        
+
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        
-        queued.append(mediaRequestBag)
+        decoder.keyDecodingStrategy = .convertFromSnakeCase        
 
         return Future { promise in
             session.dataTask(with: request) { (data, response, error) in
@@ -79,9 +62,10 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
                         do {
                             let uploadResponse = try decoder.decode(UploadResponse.self, from: data)
                             DispatchQueue.main.async {
+                                self.objectWillChange.send()
                                 mediaRequestBag.uploadResponse = uploadResponse
+                                promise(.success(mediaRequestBag))
                             }
-                            promise(.success(mediaRequestBag))
                         } catch {
                             promise(.failure(error))
                         }
@@ -109,8 +93,11 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
                     .decode(type: UploadResponse.self, decoder: decoder)
                     .receive(on: RunLoop.main)
                     .map { response in
-//                        print("Media uploading (checkStatus): UploadResponse: \(response)")
+                        self.objectWillChange.send()
                         mediaRequestBag.uploadResponse = response
+                        if (self.finished) {
+                            self.onFinish?()
+                        }
                         return mediaRequestBag
                     }
                     .eraseToAnyPublisher()
@@ -130,18 +117,24 @@ public class Nip96Uploader: NSObject, ObservableObject, URLSessionTaskDelegate {
                     receiveCompletion: { _ in },
                     receiveValue: { mediaRequestBag in
                         guard let response = mediaRequestBag.uploadResponse else { return }
-//                        print("Media uploading (processResponse): UploadResponse: \(response)")
                         if response.status == "processing" {
+                            self.objectWillChange.send()
                             mediaRequestBag.state = .processing(percentage: response.percentage ?? 0)
                         }
                         else if response.status == "completed" || response.status == "success"  {
+                            self.objectWillChange.send()
                             mediaRequestBag.uploadResponse = response
                         }
                     })
                 .store(in: &self.subscriptions)
             
         case "success", "completed":
+            self.objectWillChange.send()
             mediaRequestBag.uploadResponse = response
+            
+            if (self.finished) {
+                self.onFinish?()
+            }
         default:
             return
         }
@@ -159,11 +152,7 @@ public enum errors: Error {
     case invalidApiUrl
 }
 
-public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
-        
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
+public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessionTaskDelegate {
     
     public static func == (lhs: MediaRequestBag, rhs: MediaRequestBag) -> Bool {
         lhs.id == rhs.id
@@ -180,6 +169,7 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     
     public var uploadResponse:UploadResponse? {
         didSet {
+            self.objectWillChange.send()
             if let status = uploadResponse?.status, status == "processing", let percentage = uploadResponse?.percentage {
                 state = .processing(percentage: percentage)
             }
@@ -190,7 +180,7 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
                         self.dim = dim
                     }
                     if let hash = uploadResponse.nip94Event.tags.first(where: { $0.type == "x"} )?.value {
-                        self.hash = hash
+                        self.sha256 = hash
                     }
                     
                     downloadUrl = url
@@ -208,7 +198,7 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     @Published public var state:UploadState = .initializing
     @Published public var downloadUrl:String?
     public var dim:String? // "640x480" dimensions of processed image in imeta format  (DIP-01)
-    public var hash:String? // hash of processed image
+    public var sha256:String? // hash of processed image
     
     public var finished:Bool { // helper because we can't do == on enum with param
         switch state {
@@ -222,13 +212,15 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
     private let uploadtype:String // "avatar" "banner" or "media"
     private let filename:String
     private let mediaData:Data
+    public let index: Int
     
-    public init(apiUrl:URL, method:String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data) {
+    public init(apiUrl:URL, method:String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0) {
         self.apiUrl = apiUrl
         self.method = method
         self.uploadtype = uploadtype
         self.filename = filename
         self.mediaData = mediaData
+        self.index = index
         
         let body = NSMutableData()
         
@@ -250,7 +242,19 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
         self.httpBody = body as Data
         
         self.sha256hex = httpBody.sha256().hexEncodedString()
-        self.contentLength = self.httpBody.count
+        let contentLength = self.httpBody.count
+        self.contentLength = contentLength
+        super.init()
+        progressSubject
+            .receive(on: RunLoop.main)
+            .sink { [weak self] totalBytesSent in
+                print("processResponse: totalBytesSent (index: \(index)) \(totalBytesSent)")
+                let progress = totalBytesSent / Float(contentLength)
+                if progress > 0.01 && progress < 1.0 {
+                    self?.state = .uploading(percentage: min(100,Int(ceil(progress * 100))))
+                }
+            }
+            .store(in: &subscriptions)
     }
     
     public func getAuthorizationHeader(_ keys:Keys) throws -> String {
@@ -270,9 +274,18 @@ public class MediaRequestBag: Hashable, Identifiable, ObservableObject {
         guard let base64 = signedEvent.base64() else { throw NSError(domain: "Unable to create json() or base64", code: 999) }
         return "Nostr \(base64)"
     }
+    
+    // --- MARK: URLSessionTaskDelegate
+    
+    private var progressSubject = PassthroughSubject<Float, Never>()
+    private var subscriptions = Set<AnyCancellable>()
+    
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
+        progressSubject.send(Float(totalBytesSent))
+    }
 }
 
-public enum UploadState {
+public enum UploadState: Equatable, Hashable {
     case initializing
     case uploading(percentage:Int?)
     case processing(percentage:Int?)
