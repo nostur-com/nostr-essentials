@@ -9,7 +9,7 @@ import Foundation
 import CryptoKit
 
 extension Data {
-    func sha256() -> Data {
+    public func sha256() -> Data {
         let digest = SHA256.hash(data: self)
         return Data(digest)
     }
