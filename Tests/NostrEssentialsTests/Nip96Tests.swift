@@ -40,6 +40,7 @@ final class Nip96Tests: XCTestCase {
         let imageData = try Data(contentsOf: filepath!)
         let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "https://nostrcheck.me/api/v2/media")!, mediaData: imageData)
         let uploader = Nip96Uploader()
+        uploader.queued = [mediaRequestBag]
                 
         let expectation = self.expectation(description: "testMediaUpload")
         
@@ -97,7 +98,7 @@ final class Nip96Tests: XCTestCase {
         let expectation = self.expectation(description: "testMediaUpload")
         
         let mediaRequestBags = [mediaRequestBag1, mediaRequestBag2, mediaRequestBag3, mediaRequestBag4]
-        
+        uploader.queued = mediaRequestBags
         uploader.uploadingPublishers(for: mediaRequestBags, keys: keys)
             .sink(receiveCompletion: { _ in
                 expectation.fulfill()
