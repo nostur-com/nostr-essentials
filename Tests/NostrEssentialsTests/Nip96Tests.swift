@@ -120,7 +120,7 @@ final class Nip96Tests: XCTestCase {
         for item in uploader.queued {
             print(item.downloadUrl ?? "?")
             print(item.dim ?? "?")
-            print(item.hash ?? "?")
+            print(item.sha256 ?? "?")
         }
     }
     

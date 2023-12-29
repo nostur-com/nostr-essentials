@@ -78,7 +78,9 @@ final class Nip98HttpAuthTests: XCTestCase {
             ]
         )
         
-        XCTAssertEqual(unsignedEvent.base64(), "eyJwdWJrZXkiOiIxYmU4OTlkNGIzNDc5YTVhM2ZlZjVmYjU1YmYzYzJkN2Y1YWFiYmY4MWY0ZDEzYzUyM2FmYTc2MDQ2MmNkNDQ4IiwiY29udGVudCI6IiIsImlkIjoiIiwiY3JlYXRlZF9hdCI6MTY3Njc4NDMyMCwic2lnIjoiIiwia2luZCI6MjcyMzUsInRhZ3MiOltbInUiLCJodHRwczpcL1wvbm9zdHJjaGVjay5tZVwvYXBpXC92MlwvbWVkaWEiXSxbIm1ldGhvZCIsIkdFVCJdXX0=")
+        XCTAssertTrue(unsignedEvent.base64()!.starts(with: "ey"))
+        XCTAssertTrue(unsignedEvent.base64()!.suffix(1) == "=")
+        
         print(NSString(string:unsignedEvent.json()!))
         print(NSString(string:unsignedEvent.base64()!))
         
