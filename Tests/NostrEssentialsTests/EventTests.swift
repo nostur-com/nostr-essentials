@@ -43,8 +43,6 @@ final class EventTests: XCTestCase {
     }
     
     func testComputeId() throws {
-        let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
-
         var unsignedEvent = Event(
             pubkey: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448",
             content: "Hello World", kind: 1, created_at: 1676784320
