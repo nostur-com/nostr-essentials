@@ -41,11 +41,14 @@ final class FiltersTests: XCTestCase {
     
     func testSinceUntilLimit() throws {
         let filter = Filters(kinds: [1], since: 1676784320, until: 1678888888, limit: 777)
-                
-        XCTAssertEqual(
-            """
-            {"until":1678888888,"since":1676784320,"kinds":[1],"limit":777}
-            """, filter.json())
+                        
+        // final order is not determenistic but output should be something like:
+        //  {"until":1678888888,"since":1676784320,"kinds":[1],"limit":777}
+        
+        XCTAssertTrue(filter.json()!.contains(###""until":1678888888"###))
+        XCTAssertTrue(filter.json()!.contains(###""since":1676784320"###))
+        XCTAssertTrue(filter.json()!.contains(###"limit":777"###))
+        XCTAssertTrue(filter.json()!.contains(###""kinds":[1]"###))
     }
     
     func testTags() throws {
