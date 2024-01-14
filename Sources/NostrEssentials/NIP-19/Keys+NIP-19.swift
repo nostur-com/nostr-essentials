@@ -53,7 +53,9 @@ extension Keys {
         return Self.hex(npub)
     }
     
-    
+    static public func hex(note1:String) -> String {
+        return Self.hex(note1)
+    }
 }
 
 extension String {
