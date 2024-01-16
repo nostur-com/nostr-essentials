@@ -18,7 +18,7 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(url: "https://github.com/luizmb/CombineWebSocket", .revision("7ade1417198ad7b196858dd0d0601818adae5725")),
+        .package(url: "https://github.com/fabianfabian/CombineWebSocket", .revision("aca69f455cf9cc27d1ecaa5c5b5dc9f54f496d7b")),
         .package(url: "https://github.com/GigaBitcoin/secp256k1.swift", .upToNextMinor(from: "0.9.2")),
         .package(url: "https://github.com/apple/swift-collections.git", .upToNextMinor(from: "1.0.0")) // or `.upToNextMajor
 //        .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "2.0.0")),
