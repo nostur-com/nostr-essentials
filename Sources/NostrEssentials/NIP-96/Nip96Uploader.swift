@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 import Combine
-import Collections
 
 public class Nip96Uploader: NSObject, ObservableObject {
     @Published public var queued:[MediaRequestBag] = []

@@ -20,10 +20,6 @@ let package = Package(
         // .package(url: /* package url */, from: "1.0.0"),
         .package(url: "https://github.com/fabianfabian/CombineWebSocket", .revision("aca69f455cf9cc27d1ecaa5c5b5dc9f54f496d7b")),
         .package(url: "https://github.com/GigaBitcoin/secp256k1.swift", .upToNextMinor(from: "0.9.2")),
-        .package(url: "https://github.com/apple/swift-collections.git", .upToNextMinor(from: "1.0.0")) // or `.upToNextMajor
-//        .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "2.0.0")),
-//        .package(url: "https://github.com/jedisct1/swift-sodium", branch: "master")
-        
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -33,15 +29,12 @@ let package = Package(
             dependencies: [
                 .product(name: "CombineWebSocket", package: "CombineWebSocket"),
                 .product(name: "secp256k1", package: "secp256k1.swift"),
-                .product(name: "Collections", package: "swift-collections")
-//                .product(name: "Sodium", package: "swift-sodium")
             ]
         ),
         .testTarget(
             name: "NostrEssentialsTests",
             dependencies: [
-                "NostrEssentials",
-                .product(name: "Collections", package: "swift-collections")
+                "NostrEssentials"
             ],
             resources: [
                 .copy("Resources/upload-test.png"),
