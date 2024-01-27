@@ -119,12 +119,7 @@ public class ConnectionPool: ObservableObject {
                             connection.nreqSubscriptions.insert(subscriptionId!)
                         }
                     }
-                    if afterPing {
-                        connection.sendMessageAfterPing(message.json()!)
-                    }
-                    else {
-                        connection.sendMessage(message.json()!)
-                    }
+                    connection.sendMessage(message.json()!)
                 }
                 else if message.type == .CLOSE { // CLOSE FOR ALL RELAYS
                     if (!connection.relayConfig.read) { continue }
@@ -139,14 +134,45 @@ public class ConnectionPool: ObservableObject {
                     if (!connection.isSocketConnected) && (!connection.isSocketConnecting) {
                         connection.connect()
                     }
-                    if afterPing {
-                        connection.sendMessageAfterPing(message.json()!)
-                    }
-                    else {
-                        connection.sendMessage(message.json()!)
-                    }
+                    connection.sendMessage(message.json()!)
                 }
             }
         }
+        
+        guard let preferredRelays = self.preferredRelays else { return }
+        
+        if message.type == .REQ && !preferredRelays.findEventsRelays.isEmpty {
+            self.sendToUsersPreferredReadRelays(message, subscriptionId: subscriptionId)
+        }
+        else if message.type == .EVENT && !preferredRelays.reachUserRelays.isEmpty {
+            self.sendToUsersPreferredReadRelays(message, subscriptionId: subscriptionId)
+        }
     }
+    
+    private func sendToUsersPreferredReadRelays(_ message: ClientMessage, subscriptionId: String? = nil) {
+        guard let preferredRelays = self.preferredRelays else { return }
+        
+        let ourRelays: Set<String> = Set(connections.keys)
+        
+        // Take pubkeys from first filter. Could be more and different but that wouldn't make sense for an outbox request.
+        guard let filters = message.filters else { return }
+        guard let pubkeys = filters.first?.authors else { return }
+        
+        let plan: RequestPlan = createRequestPlan(pubkeys: pubkeys, reqFilters: filters, ourRelays: ourRelays, preferredRelays: preferredRelays)
+        
+        for req in plan.findEventsRequests
+            .filter({ (relay: String, findEventsRequest: FindEventsRequest) in
+                // Only requests that have .authors > 0
+                // Requests can have multiple filters, we can count the authors on just the first one, all others should be the same (for THIS relay)
+                findEventsRequest.pubkeys.count > 0
+                
+            })
+            .sorted(by: {
+                $0.value.pubkeys.count > $1.value.pubkeys.count
+            }) {
+            
+            print("🟩 SENDING-- \(req.value.pubkeys.count): \(req.key) - \(req.value.filters.description)")
+        }
+    }
+    
 }
