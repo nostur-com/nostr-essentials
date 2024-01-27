@@ -33,12 +33,12 @@ public func normalizeRelayUrl(_ url:String) -> String {
         .replacingOccurrences(of: ":80", with: "")
         .replacingOccurrences(of: ":443", with: "")
     
-    // "wss://example.com/" -> "wssexample.com/"
-    // "wss://example.com" -> "wssexample.com"
-    // "wss://example.com/path" -> "wssexample.com/path"
-    // "wss://example.com/path/" -> "wssexample.com/path/"
-    // "wss://example.com:80/" -> "wssexample.com/"
-    // "wss://example.com:443" -> "wssexample.com"
-    // "wss://example.com:443/path" -> "wssexample.com/path"
-    // "wss://example.com:443/path/" -> "wssexample.com/path/"
+    // "wss://example.com/" -> "wss://example.com"
+    // "wss://example.com" -> "wss://example.com"
+    // "wss://example.com/path" -> "wss://example.com/path"
+    // "wss://example.com/path/" -> "wss://example.com/path/"
+    // "ws://example.com:80/" -> "ws://example.com"
+    // "wss://example.com:443" -> "wss://example.com"
+    // "wss://example.com:443/path" -> "wss://example.com/path"
+    // "wss://example.com:443/path/" -> "wss://example.com/path/"
 }

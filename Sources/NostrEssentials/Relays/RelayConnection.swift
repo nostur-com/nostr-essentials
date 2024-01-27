@@ -13,18 +13,18 @@ import CombineWebSocket
 // Your app should implement RelayConnectionDelegate to handle responses from the relays.
 
 public protocol RelayConnectionDelegate {
-    func didConnect(_ url:String)
+    func didConnect(_ url: String)
     
-    func didReceiveMessage(_ url:String, message:String)
+    func didReceiveMessage(_ url: String, message: String)
     
-    func didDisconnect(_ url:String)
+    func didDisconnect(_ url: String)
     
-    func didDisconnectWithError(_ url:String, error:Error)
+    func didDisconnectWithError(_ url: String, error: Error)
 }
 
 struct SocketMessage {
     let id = UUID()
-    let text:String
+    let text: String
 }
 
 public class RelayConnection: NSObject, URLSessionWebSocketDelegate, ObservableObject {
@@ -37,23 +37,23 @@ public class RelayConnection: NSObject, URLSessionWebSocketDelegate, ObservableO
     }
     
     // other (should use queue: "connection-pool"
-    public var url:String { relayConfig.id }
-    public var nreqSubscriptions:Set<String> = []
+    public var url: String { relayConfig.id }
+    public var nreqSubscriptions: Set<String> = []
     
-    public var lastMessageReceivedAt:Date? = nil
+    public var lastMessageReceivedAt: Date? = nil
     private var exponentialReconnectBackOff = 0
-    private var skipped:Int = 0
+    private var skipped: Int = 0
     
     
-    public var relayConfig:RelayConfig
-    private var session:URLSession?
-    private var queue:DispatchQueue
-    private var webSocket:WebSocket?
-    private var webSocketSub:AnyCancellable?
+    public var relayConfig: RelayConfig
+    private var session: URLSession?
+    private var queue: DispatchQueue
+    private var webSocket: WebSocket?
+    private var webSocketSub: AnyCancellable?
     private var subscriptions = Set<AnyCancellable>()
-    private var outQueue:[SocketMessage] = []
-    private var delegate:RelayConnectionDelegate
-    private var pool:ConnectionPool
+    private var outQueue: [SocketMessage] = []
+    private var delegate: RelayConnectionDelegate
+    private var pool: ConnectionPool
     
     
     private var isDeviceConnected = false {
@@ -114,7 +114,7 @@ public class RelayConnection: NSObject, URLSessionWebSocketDelegate, ObservableO
             .store(in: &subscriptions)
     }
     
-    public func connect(andSend:String? = nil, forceConnectionAttempt:Bool = false) {
+    public func connect(andSend: String? = nil, forceConnectionAttempt: Bool = false) {
         queue.async(flags: .barrier) { [weak self] in
             print("\(Date()): 3: on thread \(Thread.current) \(andSend ?? "??")")
             guard let self = self else { return }
@@ -232,7 +232,7 @@ public class RelayConnection: NSObject, URLSessionWebSocketDelegate, ObservableO
         }
     }
     
-    public func sendMessageAfterPing(_ text:String) {
+    public func sendMessageAfterPing(_ text: String) {
             queue.async(flags: .barrier) { [weak self] in
                 guard let self = self else { return }
                 if !self.isDeviceConnected { return }
@@ -308,7 +308,7 @@ public class RelayConnection: NSObject, URLSessionWebSocketDelegate, ObservableO
     
     // -- MARK: URLSessionWebSocketDelegate
     
-    func didReceiveData(_ data:Data) {
+    func didReceiveData(_ data: Data) {
         if self.isSocketConnecting {
             self.isSocketConnecting = false
         }
@@ -319,7 +319,7 @@ public class RelayConnection: NSObject, URLSessionWebSocketDelegate, ObservableO
     }
     
     // wil call delegate.didReceiveMessage
-    func didReceiveMessage(_ text:String) {
+    func didReceiveMessage(_ text: String) {
         if self.isSocketConnecting {
             self.isSocketConnecting = false
         }
