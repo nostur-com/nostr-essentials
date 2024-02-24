@@ -46,5 +46,12 @@ final class KeysTests: XCTestCase {
     func testNsecToPrivkeyHex() throws {
         XCTAssertEqual(Keys.hex(nsec: "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc"), "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
     }
+    
+    func testInvalidKeyShouldReturnNil() throws {
+        XCTAssertNil(Keys.hex(nsec: "nsec1vq5nxhd4lalala"))
+        XCTAssertNil(Keys.hex(nsec: "nplub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7"))
+        XCTAssertNil(Keys.hex(nsec: "pub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7"))
+        XCTAssertNil(Keys.hex(nsec: "npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7]"))
+    }
 
 }

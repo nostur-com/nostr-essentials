@@ -38,22 +38,22 @@ extension Keys {
         return bech32.encode(prefix, values: data)
     }
     
-    static public func hex(_ idORkey:String) -> String {
+    static public func hex(_ idORkey: String) -> String? {
         let bech32 = Bech32()
-        let (_, checksum) = try! bech32.decode(idORkey)
+        guard let (_, checksum) = try? bech32.decode(idORkey, skipLimit: false) else { return nil }
         let key = checksum.convertBits(from: 5, to: 8, pad: false)!.makeBytes()
         return key.hexString()
     }
     
-    static public func hex(nsec:String) -> String {
+    static public func hex(nsec: String) -> String? {
         return Self.hex(nsec)
     }
     
-    static public func hex(npub:String) -> String {
+    static public func hex(npub: String) -> String? {
         return Self.hex(npub)
     }
     
-    static public func hex(note1:String) -> String {
+    static public func hex(note1: String) -> String? {
         return Self.hex(note1)
     }
 }
