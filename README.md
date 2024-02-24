@@ -53,10 +53,14 @@ Keys.npub(hex: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448
 Keys.nsec(hex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e") // "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc"
 
 // npub to public key hex
-Keys.hex(npub: "npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7") // "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448"
+guard let pubkey = Keys.hex(npub: "npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7") 
+else { print("invalid key"); return }
+print(pubkey) // "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448"
 
 // nsec to private key hex
-Keys.hex(nsec: "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc") // "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e"
+guard let privkey = Keys.hex(nsec: "nsec1vq5nxhd4fqje4wt7lf0ma6s0ug2fjqgxg735xm5rep8lp99qvu8qv0d7hc") 
+else { print("invalid key"); return }
+print(privkey) // "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e"
 
 ```
 ### Generate nostr events (NIP-01)
