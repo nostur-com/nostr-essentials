@@ -7,7 +7,6 @@
 
 import Foundation
 import Combine
-import CombineWebSocket
 import CoreData
 
 // There should be 1 instance of ConnectionPool in your app

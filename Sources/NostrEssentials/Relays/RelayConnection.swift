@@ -114,7 +114,6 @@ public class RelayConnection: NSObject, URLSessionWebSocketDelegate, ObservableO
     
     public func connect(andSend: String? = nil, forceConnectionAttempt: Bool = false) {
         queue.async(flags: .barrier) { [weak self] in
-            print("\(Date()): 3: on thread \(Thread.current) \(andSend ?? "??")")
             guard let self = self else { return }
             guard self.isDeviceConnected else { return }
             guard !self.isSocketConnecting else { return }
