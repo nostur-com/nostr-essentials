@@ -153,7 +153,7 @@ public class Bech32 {
         return (humanReadablePart, Data(data[..<(data.count - 6)]))
     }
     
-    public func decode(_ str: String, skipLimit:Bool = false) throws -> (hrp: String, checksum: Data) {
+    public func decode(_ str: String, skipLimit: Bool = false) throws -> (hrp: String, checksum: Data) {
         guard let strBytes = str.data(using: .utf8) else {
             throw DecodingError.nonUTF8String
         }

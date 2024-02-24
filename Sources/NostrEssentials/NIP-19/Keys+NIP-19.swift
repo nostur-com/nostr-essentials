@@ -22,15 +22,15 @@ extension Keys {
         return bech32.encode("nsec", values: privateKeyData)
     }
     
-    static public func npub(hex:String) -> String {
+    static public func npub(hex: String) -> String {
         return Self.bech32(hex, prefix: "npub")
     }
     
-    static public func nsec(hex:String) -> String {
+    static public func nsec(hex: String) -> String {
         return Self.bech32(hex, prefix: "nsec")
     }
     
-    static public func bech32(_ idOrKey:String, prefix:String) -> String {
+    static public func bech32(_ idOrKey: String, prefix: String) -> String {
         let data = Data(bytes: idOrKey.hexToBytes(), count: 32)
             .convertBits(from: 8, to: 5, pad: true)!
         
