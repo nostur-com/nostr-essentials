@@ -90,12 +90,13 @@ public class RelayConnection: NSObject, URLSessionWebSocketDelegate, ObservableO
         
         NetworkMonitor.shared.isConnectedSubject
             .receive(on: self.queue)
-            .sink { isNowConnected in
+            .sink { [weak self] isNowConnected in
+                guard let self = self else { return }
                 let fromDisconnectedToConnected = !self.isDeviceConnected && isNowConnected
                 let fromConnectedToDisconnected = self.isDeviceConnected && !isNowConnected
                 if self.isDeviceConnected != isNowConnected {
-                    self.queue.async(flags: .barrier) {
-                        self.isDeviceConnected = isNowConnected
+                    self.queue.async(flags: .barrier) { [weak self] in
+                        self?.isDeviceConnected = isNowConnected
                     }
                 }
                 if (fromDisconnectedToConnected) {
