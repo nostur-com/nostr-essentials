@@ -54,4 +54,17 @@ final class NostrRegexesTests: XCTestCase {
     }
 
 
+    func testMatchBolt11() throws {
+        let r = NostrRegexes.default
+        
+        let exampleTags = ###"[["p","eab0e756d32b80bcd464f3d844b8040303075a13eabc3599a762c9ac7ab91f4f"],["e","393121b1031c409a3b0efa45b6aae82adba32510468a5f129f022995d07c3795"],["P","6ad3e2a34818b153c81f48c58f44e5199e7b4fc8dbe37810a000dce3c90b7740"],["bolt11","lnbc1u1pnza24ppp5jq83dwwwuy3dn6x37f3547gq6d2cvq9943g5p3cqgzmjhfq5mvxshp5z0uhtng8jlwhwuggwghvtv7jgut5xpnlfhu8uxqvqzmx4us3x6vscqzzsxqyz5vqsp5stc3l4dxzljetl8vkpk8cs5ak9ryr2ttjg06mnxnfentkwrwj7eq9qyyssqaemrtrs90dzyv9vksu5jmffqwrw6qcxvq0gvvyytq0p7yddr3vksypg0ehs73tlewfn94h3jqe45qxrpmeqk9qpwwxvu4l3qg6r9pcspmp7xr9"],["preimage","5d899e1b1f5aeda8b052499ded89c66301f3398823670d7017360365a7517fee"],["description","{\"id\":\"eb541dc9a94b9ad1f9333fe8ea10945b69a0a390341de40ae92c6206422cc038\",\"sig\":\"fdc32c1c801c748e73f3101e07ed83c139396d78123d518f189e637e80dad5e07d80a7ce578dedc365066f78c21f215c3dce8f4bd23ce88cf0d477df457cea44\",\"created_at\":1714334369,\"tags\":[[\"p\",\"eab0e756d32b80bcd464f3d844b8040303075a13eabc3599a762c9ac7ab91f4f\"],[\"e\",\"393121b1031c409a3b0efa45b6aae82adba32510468a5f129f022995d07c3795\"],[\"relays\",\"wss://relay.nostr.band\",\"wss://theforest.nostr1.com\",\"wss://wss://support.nostr1.com\",\"wss://relayable.org\",\"wss://nostr.mutinywallet.com\",\"ws://umbrel.local:4848\",\"wss://nostr.wine\",\"wss://purplepag.es\",\"ws://umheps4fzpckynshufbtbo3qox26fsv4u4bfqibgrvj7gpzjnt77giqd.onion\",\"wss://nos.lol\"]],\"pubkey\":\"6ad3e2a34818b153c81f48c58f44e5199e7b4fc8dbe37810a000dce3c90b7740\",\"content\":\"\",\"kind\":9734}"]]"###
+        
+        if let match = r.cache[.bolt11]!.firstMatch(in: exampleTags, range: NSRange(exampleTags.startIndex..., in: exampleTags)) {
+            
+            if let range = Range(match.range(at: 1), in: exampleTags) {
+                XCTAssertEqual(String(exampleTags[range]), ###"lnbc1u1pnza24ppp5jq83dwwwuy3dn6x37f3547gq6d2cvq9943g5p3cqgzmjhfq5mvxshp5z0uhtng8jlwhwuggwghvtv7jgut5xpnlfhu8uxqvqzmx4us3x6vscqzzsxqyz5vqsp5stc3l4dxzljetl8vkpk8cs5ak9ryr2ttjg06mnxnfentkwrwj7eq9qyyssqaemrtrs90dzyv9vksu5jmffqwrw6qcxvq0gvvyytq0p7yddr3vksypg0ehs73tlewfn94h3jqe45qxrpmeqk9qpwwxvu4l3qg6r9pcspmp7xr9"###)
+            }
+        }
+    }
+    
 }

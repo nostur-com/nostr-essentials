@@ -30,6 +30,8 @@ public class NostrRegexes {
         
         case hashtag     = ###"(?<![/\?]|\b)(\#)([^\s#\]\[]\S{2,})\b"###
         case indexedTag  = ###"#\[(\d+)\]"###
+        
+        case bolt11  = ###"\["bolt11","(.*?)"\]"###
     }
     
     // Cache the regex initializations before use
@@ -45,7 +47,8 @@ public class NostrRegexes {
         .anyId: try! NSRegularExpression(pattern: pattern.anyId.rawValue, options: []),
         .nostrUri: try! NSRegularExpression(pattern: pattern.nostrUri.rawValue, options: []),
         .hashtag: try! NSRegularExpression(pattern: pattern.hashtag.rawValue, options: []),
-        .indexedTag: try! NSRegularExpression(pattern: pattern.indexedTag.rawValue, options: [])
+        .indexedTag: try! NSRegularExpression(pattern: pattern.indexedTag.rawValue, options: []),
+        .bolt11: try! NSRegularExpression(pattern: pattern.bolt11.rawValue, options: [])
     ]
     // Replace matches in regex with result of function, which takes the match as a parameter
     public func replaceMatches(in regex: NSRegularExpression, in string: String, with function: (String) -> String) -> String {
