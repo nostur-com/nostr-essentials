@@ -96,6 +96,7 @@ public class Nip96Uploader: NSObject, ObservableObject {
                         mediaRequestBag.uploadResponse = response
                         if (self.finished) {
                             self.onFinish?()
+                            self.onFinish = nil
                         }
                         return mediaRequestBag
                     }
@@ -133,6 +134,7 @@ public class Nip96Uploader: NSObject, ObservableObject {
             
             if (self.finished) {
                 self.onFinish?()
+                self.onFinish = nil
             }
         default:
             return
