@@ -22,7 +22,7 @@ import Foundation
  }
  */
 
-public struct Filters: Encodable, REQelement {
+public struct Filters: Encodable, REQelement, Hashable {
     public var ids:Set<String>?
     public var authors:Set<String>?
     public var kinds:Set<Int>?
@@ -94,7 +94,7 @@ public struct Filters: Encodable, REQelement {
     public func json() -> String? { toJson(self) }
 }
 
-public struct TagFilter {
+public struct TagFilter: Hashable {
     public var tag:String // "e" or "p" or "t", etc...
     public var values:[String] // <a list of event ids, or other values that are referenced in the tag specified by the single letter>
     
