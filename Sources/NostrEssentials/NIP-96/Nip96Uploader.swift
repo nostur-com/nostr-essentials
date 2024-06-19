@@ -159,16 +159,16 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         lhs.id == rhs.id
     }
 
-    public var id:String { (sha256hex + apiUrl.absoluteString) }
+    public var id: String { (sha256hex + apiUrl.absoluteString) }
     
-    public var apiUrl:URL
-    public var method:String
-    public var httpBody:Data
-    public var sha256hex:String
-    public var boundary:String
-    public var contentLength:Int
+    public var apiUrl: URL
+    public var method: String
+    public var httpBody: Data
+    public var sha256hex: String
+    public var boundary: String
+    public var contentLength: Int
     
-    public var uploadResponse:UploadResponse? {
+    public var uploadResponse: UploadResponse? {
         didSet {
             self.objectWillChange.send()
             if let status = uploadResponse?.status, status == "processing", let percentage = uploadResponse?.percentage {
@@ -196,12 +196,12 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
             }
         }
     }
-    @Published public var state:UploadState = .initializing
-    @Published public var downloadUrl:String?
-    public var dim:String? // "640x480" dimensions of processed image in imeta format  (DIP-01)
-    public var sha256:String? // hash of processed image
+    @Published public var state: UploadState = .initializing
+    @Published public var downloadUrl: String?
+    public var dim: String? // "640x480" dimensions of processed image in imeta format  (DIP-01)
+    public var sha256: String? // hash of processed image
     
-    public var finished:Bool { // helper because we can't do == on enum with param
+    public var finished: Bool { // helper because we can't do == on enum with param
         switch state {
         case .success(_):
             return true
@@ -210,12 +210,12 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         }
     }
     
-    private let uploadtype:String // "avatar" "banner" or "media"
-    private let filename:String
-    private let mediaData:Data
+    private let uploadtype: String // "avatar" "banner" or "media"
+    private let filename: String
+    private let mediaData: Data
     public let index: Int
     
-    public init(apiUrl:URL, method:String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0) {
+    public init(apiUrl: URL, method: String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0) {
         self.apiUrl = apiUrl
         self.method = method
         self.uploadtype = uploadtype
@@ -258,7 +258,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
             .store(in: &subscriptions)
     }
     
-    public func getAuthorizationHeader(_ keys:Keys) throws -> String {
+    public func getAuthorizationHeader(_ keys: Keys) throws -> String {
         var unsignedEvent = Event(
             pubkey: keys.publicKeyHex,
             content: "",

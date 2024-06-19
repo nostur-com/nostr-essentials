@@ -29,16 +29,16 @@ public struct ClientMessage: Encodable {
         case CLOSE
     }
     
-    public let type:ClientMessageType
+    public let type: ClientMessageType
     
     // if EVENT:
-    public var event:Event?
+    public var event: Event?
     
     // if REQ or CLOSE:
-    public var subscriptionId:String?
+    public var subscriptionId: String?
 
     // if REQ
-    public var filters:[Filters]?
+    public var filters: [Filters]?
     
     public init(type: ClientMessageType, event: Event? = nil, subscriptionId: String? = nil, filters: [Filters]? = nil) {
         self.type = type
