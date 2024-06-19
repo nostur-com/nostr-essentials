@@ -225,7 +225,14 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         
         let body = NSMutableData()
         
-        let contentType = filename.suffix(4) == ".png" ? "image/png" : "image/jpg"
+        let contentType = switch filename.suffix(4) {
+        case ".png":
+            "image/png"
+        case ".mp4":
+            "video/mp4"
+        default:
+            "image/jpg"
+        }
         
         let boundary = UUID().uuidString
         self.boundary = boundary
