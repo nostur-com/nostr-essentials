@@ -226,6 +226,14 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         let body = NSMutableData()
         
         let contentType = switch filename.suffix(4) {
+        case ".3gp":
+            "video/3gpp"
+        case ".mov":
+            "video/quicktime"
+        case ".ogg":
+            "video/ogg"
+        case ".webm":
+            "video/webm"
         case ".png":
             "image/png"
         case ".mp4":
