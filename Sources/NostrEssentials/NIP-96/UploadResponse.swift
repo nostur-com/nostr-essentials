@@ -8,9 +8,9 @@
 import Foundation
 
 public struct UploadResponse: Decodable {
-    public let status:String // "success" if successful or "error" if not
-    public var message:String? // Free text success, failure or info message  "Upload successful.",
-    public var processingUrl:String? // Optional. See "Delayed Processing" section
+    public let status: String // "success" if successful or "error" if not
+    public var message: String? // Free text success, failure or info message  "Upload successful.",
+    public var processingUrl: String? // Optional. See "Delayed Processing" section
     public var percentage: Int? // Processing percentage. An integer between 0 and 100.
     
     // This uses the NIP-94 event format but DO NOT need

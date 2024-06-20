@@ -264,7 +264,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         progressSubject
             .receive(on: RunLoop.main)
             .sink { [weak self] totalBytesSent in
-                print("processResponse: totalBytesSent (index: \(index)) \(totalBytesSent)")
+//                print("processResponse: totalBytesSent (index: \(index)) \(totalBytesSent)")
                 let progress = totalBytesSent / Float(contentLength)
                 if progress > 0.01 && progress < 1.0 {
                     self?.state = .uploading(percentage: min(100,Int(ceil(progress * 100))))
@@ -303,8 +303,8 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
 
 public enum UploadState: Equatable, Hashable {
     case initializing
-    case uploading(percentage:Int?)
-    case processing(percentage:Int?)
+    case uploading(percentage: Int?)
+    case processing(percentage: Int?)
     case success(String)
-    case error(message:String)
+    case error(message: String)
 }
