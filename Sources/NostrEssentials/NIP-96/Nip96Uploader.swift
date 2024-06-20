@@ -177,7 +177,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
             else if let uploadResponse = uploadResponse {
                 if let url = uploadResponse.nip94Event.tags.first(where: { $0.type == "url"} )?.value {
                     
-                    if let dim = uploadResponse.nip94Event.tags.first(where: { $0.type == "dim"} )?.value {
+                    if let dim = uploadResponse.nip94Event.tags.first(where: { $0.type == "dim"} )?.value, dim != "0x0" {
                         self.dim = dim
                     }
                     if let hash = uploadResponse.nip94Event.tags.first(where: { $0.type == "x"} )?.value {
