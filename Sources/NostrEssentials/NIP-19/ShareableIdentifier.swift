@@ -19,17 +19,17 @@ public class ShareableIdentifier: Hashable {
         hasher.combine(bech32string)
     }
     
-    public var id:String?
-    public var dTag:String? { id }
-    public var aTag:String? {
+    public var id: String?
+    public var dTag: String? { id }
+    public var aTag: String? {
         guard let kind = kind else { return nil }
         guard let dTag = dTag else { return nil }
         guard let pubkey = pubkey else { return nil }
         return String(format: "%d:%@:%@", kind, pubkey, dTag)
     }
-    let bech32string:String
-    public var identifier:String { bech32string }
-    public let prefix:String
+    let bech32string: String
+    public var identifier: String { bech32string }
+    public let prefix: String
     
     public var pubkey: String?
     public var privkey: String?
@@ -38,7 +38,7 @@ public class ShareableIdentifier: Hashable {
     public var relay:String? { relayUrl }
     public var kind: Int?
     
-    public init(_ bech32string:String) throws {
+    public init(_ bech32string: String) throws {
         self.bech32string = bech32string
         
         if bech32string.count == 63 {
@@ -117,7 +117,7 @@ public class ShareableIdentifier: Hashable {
     }
     
     // naddr/nevent/nprofile,nrelay
-    public init(_ prefix:String, id:String? = nil, kind:Int? = nil, pubkey:String? = nil, dTag:String? = nil, relayUrl:String? = nil, relays:[String] = []) throws {
+    public init(_ prefix: String, id: String? = nil, kind: Int? = nil, pubkey: String? = nil, dTag: String? = nil, relayUrl: String? = nil, relays: [String] = []) throws {
         
         if prefix == "npub", let pubkey {
             self.prefix = prefix
