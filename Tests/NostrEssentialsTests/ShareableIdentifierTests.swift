@@ -38,6 +38,16 @@ final class ShareableIdentifierTests: XCTestCase {
         XCTAssertEqual(naddr.kind, 30023)
         XCTAssertEqual(naddr.relays, ["wss://nos.lol"])
         XCTAssertEqual(naddr.aTag, "30023:9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e:nostur-mission")
+    }    
+    
+    func testDecodeAtag() throws {
+        let naddr = try ShareableIdentifier(aTag: "30023:826e9f895b81ab41a4522268b249e68d02ca81608def562a493cee35ffc5c759:Web-3-14159-cerjs6")
+        
+        XCTAssertEqual(naddr.pubkey, "826e9f895b81ab41a4522268b249e68d02ca81608def562a493cee35ffc5c759")
+        
+        XCTAssertEqual(naddr.dTag, "Web-3-14159-cerjs6")
+        XCTAssertEqual(naddr.kind, 30023)
+        XCTAssertEqual(naddr.aTag, "30023:826e9f895b81ab41a4522268b249e68d02ca81608def562a493cee35ffc5c759:Web-3-14159-cerjs6")
     }
     
     func testDecodeNrelay() throws {

@@ -199,10 +199,56 @@ public class ShareableIdentifier: Hashable {
         self.bech32string = bech32.encode(prefix, values: tlvData, eightToFive: true)
     }
     
+    
+    public init(aTag: String) throws {
+        self.prefix = "naddr"
+        
+        let elements = aTag.split(separator: ":")
+        guard elements.count >= 3 else {
+            throw EncodingError.InvalidAtag
+        }
+        
+        let aTagKind = elements[0]
+        let aTagPubkey = elements[1]
+        let aTagDefinition = elements[2]
+        
+        self.kind = Int(aTagKind)
+        self.pubkey = String(aTagPubkey)
+        self.id = String(aTagDefinition)
+        
+        var tlvData = Data()
+        
+        // Append TLV for the special type
+        let dTagValue = String(aTagDefinition).data(using: .utf8)!
+        tlvData.append(0) // Type
+        tlvData.append(UInt8(dTagValue.count)) // Length
+        tlvData.append(contentsOf: dTagValue) // Value
+        
+        let authorValue = String(aTagPubkey).hexToBytes()
+        tlvData.append(2)
+        tlvData.append(UInt8(authorValue.count))
+        tlvData.append(contentsOf: authorValue)
+        
+        guard let kind = Int(aTagKind) else {
+            throw EncodingError.InvalidAtag
+        }
+        
+        var kindValue = UInt32(kind).bigEndian
+        let kindBytes = withUnsafeBytes(of: &kindValue) { Array($0) }
+        tlvData.append(3) // Type
+        tlvData.append(UInt8(kindBytes.count)) // Length (assuming 4 bytes)
+        tlvData.append(contentsOf: kindBytes) // Value
+        
+        let bech32 = Bech32()
+        self.bech32string = bech32.encode(prefix, values: tlvData, eightToFive: true)
+    }
+    
+    
     public enum EncodingError: Error {
         case InvalidFormat
         case InvalidType
         case InvalidPrefix
+        case InvalidAtag
     }
 }
 
