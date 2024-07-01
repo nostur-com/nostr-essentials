@@ -40,7 +40,7 @@ public struct ClientMessage: Encodable {
     // if REQ
     public var filters: [Filters]?
     
-    public init(type: ClientMessageType, event: Event? = nil, subscriptionId: String? = nil, filters: [Filters]? = nil) {
+    public init(type: ClientMessageType, event: Event? = nil, subscriptionId: String? = UUID().uuidString, filters: [Filters]? = nil) {
         self.type = type
         self.event = event
         self.subscriptionId = subscriptionId

@@ -8,7 +8,7 @@
 import Foundation
 
 public struct RelayConfig: Identifiable, Hashable, Equatable {
-    public var id: String { url }
+    public var id: String { url.lowercased() }
     
     public let url: String
     public var read: Bool
@@ -18,5 +18,13 @@ public struct RelayConfig: Identifiable, Hashable, Equatable {
         self.url = normalizeRelayUrl(url)
         self.read = read
         self.write = write
+    }
+    
+    mutating func setRead(_ value: Bool) {
+        self.read = value
+    }
+    
+    mutating func setWrite(_ value: Bool) {
+        self.write = value
     }
 }
