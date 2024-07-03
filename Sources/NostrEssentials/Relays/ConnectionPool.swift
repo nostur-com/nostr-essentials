@@ -123,6 +123,13 @@ public class ConnectionPool: ObservableObject {
             connections.removeValue(forKey: relayId)
         }
     }
+
+    func removeOutboxConnection(_ relayId: String) {
+        if let connection = outboxConnections[relayId] {
+            connection.disconnect()
+            outboxConnections.removeValue(forKey: relayId)
+        }
+    }
     
     public func disconnectAll() {
         for (_, connection) in connections {
@@ -204,6 +211,9 @@ public class ConnectionPool: ObservableObject {
         
         // SEND EVENT TO WHERE OTHERS READ (TO SEND REPLIES ETC SO THEY CAN READ IT)
         else if message.type == .EVENT && !preferredRelays.reachUserRelays.isEmpty {
+            // don't send to p's if it is an event kind where p's have a different purpose than notification (eg kind:3)
+            guard (message.event?.kind ?? 1) != 3 else { return } // TODO: Which kinds more?
+            
             let pTags: Set<String> = Set( message.event?.tags.filter { $0.type == "p" }.compactMap { $0.pubkey } ?? [] )
             self.sendToOthersPreferredReadRelays(message, pubkeys: pTags)
         }
