@@ -23,13 +23,13 @@ import Foundation
  */
 
 public struct Filters: Encodable, REQelement, Hashable {
-    public var ids:Set<String>?
-    public var authors:Set<String>?
-    public var kinds:Set<Int>?
-    private var tagFilter:TagFilter?
-    public var since:Int?
-    public var until:Int?
-    public var limit:Int?
+    public var ids: Set<String>?
+    public var authors: Set<String>?
+    public var kinds: Set<Int>?
+    public var tagFilter: TagFilter?
+    public var since: Int?
+    public var until: Int?
+    public var limit: Int?
     
     public init(ids: Set<String>? = nil, authors: Set<String>? = nil, kinds: Set<Int>? = nil, tagFilter:TagFilter? = nil, since: Int? = nil, until: Int? = nil, limit: Int? = nil) {
         self.ids = ids
@@ -95,8 +95,8 @@ public struct Filters: Encodable, REQelement, Hashable {
 }
 
 public struct TagFilter: Hashable {
-    public var tag:String // "e" or "p" or "t", etc...
-    public var values:[String] // <a list of event ids, or other values that are referenced in the tag specified by the single letter>
+    public var tag: String // "e" or "p" or "t", etc...
+    public var values: [String] // <a list of event ids, or other values that are referenced in the tag specified by the single letter>
     
     public init(tag: String, values: [String]) {
         self.tag = tag
