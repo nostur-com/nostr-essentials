@@ -27,6 +27,12 @@ import Foundation
 
 
 public struct PreferredRelays {
+    
+    public init(findEventsRelays: [String : Set<String>], reachUserRelays: [String : Set<String>]) {
+        self.findEventsRelays = findEventsRelays
+        self.reachUserRelays = reachUserRelays
+    }
+    
     // Relays where we can find posts from someone. (key = relayUrl, value = pubkeys writing to that relay)
     // NIP-65: When seeking events from a user, Clients SHOULD use the WRITE relays of the user's kind:10002.
     public let findEventsRelays: [String: Set<String>]
