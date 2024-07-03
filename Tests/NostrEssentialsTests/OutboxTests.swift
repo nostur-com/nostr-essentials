@@ -115,11 +115,6 @@ final class OutboxTests: XCTestCase {
         // These are published in kind:10002 events, we add them here
         pool.setPreferredRelays(using: KIND10002NOTES.compactMap { Event.fromJson($0) }, maxPreferredRelays: 50) // set a limit to prevent abuse
         
-        // Connect to all preferred relays for finding events
-        for (key: _, value: findEventsConnection) in pool.findEventsConnections {
-            findEventsConnection.connect()
-        }
-        
         // create a nostr request (find kind:1 posts from 4 pubkeys)
         let followingPubkeys: Set<String> = ["c37b6a82a98de368c104bbc6da365571ec5a263b07057d0a3977b4c05afa7e63",
                                              "3d842afecd5e293f28b6627933704a3fb8ce153aa91d790ab11f6a752d44a42d",
@@ -137,9 +132,111 @@ final class OutboxTests: XCTestCase {
         XCTAssertEqual(myApp.testDidReceiveMessage, true)
     }
 
+    // Should write to the read-relays of the pubkeys we are replying to
+    // (Note: New (root) posts should just use own relay set / blastr). But replying or posts with p-tags should write to the read relays of p's)
+    func testOutboxModelWriting() throws {
+        // This test configures a ConnectionPool instance
+        // It sets it up with an example delegate MyTestApp which handles the relay responses, in this case to pass the tests
+        
+        let expectation = self.expectation(description: "testOutboxModelWriting")
+        
+        // Implement RelayConnectionDelegate somewhere in your app to handle responses from relays
+        // This is an example app that just logs to console and changes some test vars on connect/receive:
+        class MyTestApp: RelayConnectionDelegate {
+            
+            // These are test case related:
+            
+            private var expectation: XCTestExpectation
+            public var testDidConnect = false
+            public var testDidReceiveMessage = false {
+                didSet {
+                    if oldValue != testDidReceiveMessage {
+                        expectation.fulfill()
+                    }
+                }
+            }
+            
+            init(_ expectation: XCTestExpectation) {
+                self.expectation = expectation
+            }
+            
+            // These are the delegate methods you need to implement in your app:
+            
+            func didConnect(_ url: String) {
+                print("connected to: \(url)")
+                self.testDidConnect = true
+            }
+            
+            func didDisconnect(_ url: String) {
+                print("disconnected from: \(url)")
+            }
+            
+            func didReceiveMessage(_ url: String, message: String) {
+                print("message received from \(url): \(message)")
+//                self.testDidReceiveMessage = true
+            }
+            
+            func didDisconnectWithError(_ url: String, error: Error) {
+                print("disconnected from: \(url), with error: \(error.localizedDescription)")
+            }
+        }
+        
+        // Instantiate example app
+        let myApp = MyTestApp(expectation)
+        
+        // Define our relays, these are what we normally use without the outbox model
+        let ownRelaySet = [
+            RelayConfig(url: "wss://nos.lol", read: true, write: true),
+            RelayConfig(url: "wss://relay.damus.io", read: true, write: true),
+            RelayConfig(url: "wss://nostr.wine", read: true, write: true)
+        ]
+        
+        // Set up the connection pool
+        let pool = ConnectionPool(delegate: myApp)
+        
+        
+        // Add our own relay set to the connection pool
+        for relay in ownRelaySet {
+            let connection = pool.addConnection(relay)
+            
+            // Connect to each relay
+            connection.connect()
+        }
+        
+        // The pool needs to know which pubkeys can be found in which relays
+        // These are published in kind:10002 events, we add them here
+        pool.setPreferredRelays(using: KIND10002NOTES.compactMap { Event.fromJson($0) }, maxPreferredRelays: 50) // set a limit to prevent abuse
+    
+        // create a nostr event that mentions a user we want to reach
+        let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+
+        var unsignedEvent = Event(
+            pubkey: "1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448",
+            content: "Hello nostr:npub1n0sturny6w9zn2wwexju3m6asu7zh7jnv2jt2kx6tlmfhs7thq0qnflahe !",
+            kind: 1,
+            created_at: Int(Date().timeIntervalSince1970),
+            tags: [
+                Tag(["p","9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e"]),
+                Tag(["client","Nostr Essentials library"])
+            ]
+        )
+        
+        let signedEvent = try unsignedEvent.sign(keys)
+        
+        // send new event to the pool, the pool will figure out using the Outbox model which relays to use for which pubkeys.
+        // in addition to using our own relays, the pool will try to find additional relays for each p tag in the event
+        
+        let message = ClientMessage(type: .EVENT, event: signedEvent)
+        pool.sendMessage(message)
+        
+        waitForExpectations(timeout: 10)
+        XCTAssertEqual(myApp.testDidConnect, true)
+//        XCTAssertEqual(myApp.testDidReceiveMessage, true)
+    }
 }
 
 let KIND10002NOTES: [String] = [
+    ###"{"kind":10002,"id":"3ca7d9baaad79c2ef17f5782691ca4e1b9448b9a8881fc68379a6749fe9a7337","pubkey":"9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e","created_at":1720025198,"tags":[["r","wss://nostr.wine"],["r","wss://nos.lol"],["r","wss://fabian.nostr1.com"]],"content":"","sig":"3f0975e873bee1da78eb8cf1c3943d5f4d2dfbe938abb155a643fafe032bba06bae1106141f5e13aaf11f8f9f13a2a0db54b7d0e5c7dc5289e11b5f87005641a"}"###,
     ###"{"id":"ed312cbd4d24567770120e964b15226332adafd6ea3c9c535d5445f3bf190487","pubkey":"b17c59874dc05d7f6ec975bce04770c8b7fa9d37f3ad0096fdb76c9385d68928","created_at":1704449334,"kind":10002,"tags":[["r","wss://nostr.mom"],["r","wss://nos.lol"],["r","wss://relay.taxi"],["r","wss://free.nostr.lc"],["r","wss://relay.damus.io"],["r","wss://relay.nostr.bg"],["r","wss://relay.current.fyi"],["r","wss://relay.nostr.band","read"],["r","wss://search.nos.today","read"],["r","wss://nostr21.com"],["r","wss://relay.nostrgraph.net"],["r","wss://relayable.org"],["r","wss://nostr.semisol.dev","read"],["r","wss://relay.mostr.pub"],["r","wss://nostr.bostonbtc.com"],["r","wss://nostr.mutinywallet.com"],["r","wss://offchain.pub"],["r","wss://nostr.w3ird.tech"],["r","wss://rsslay.nostr.moe","read"],["r","wss://relay.snort.social","read"],["r","wss://purplepag.es","read"],["r","wss://relay.plebstr.com"],["r","wss://e.nos.lol"],["r","wss://nostrue.com"],["r","wss://nostr1.current.fyi"],["r","wss://relay.shitforce.one"],["r","wss://nostr.coinfundit.com"],["r","wss://bostr.yonle.lecturify.net"],["r","wss://relay.nos.social","read"],["r","wss://feeds.nostr.band/popular","read"],["r","wss://agora.nostr1.com"],["r","wss://relay.primal.net"],["r","wss://nostr.oxtr.dev"],["r","wss://pyramid.fiatjaf.com","read"],["r","wss://relay.noswhere.com"],["r","wss://strfry.chatbett.de"],["r","wss://relay.roadrunner.lat"],["r","wss://annal.purplerelay.com"],["r","wss://nostr-relay.app"],["r","wss://rnostr.onrender.com"]],"content":"","sig":"d13969a447c212503a8a0c9786ad9582f9bcb1d392bab34e5c939c8f47efe9baf17f4d9114492b63769d499938f809146547b3d8be57b6f58316de140d3e0992"}"###,
     ###"{"id":"188b6a7d762c3e5fd05fb5abe1f606131a7b815f4a89fcbd9f5eaf1de5a87c14","pubkey":"fa984bd7dbb282f07e16e7ae87b26a2a7b9b90b7246a44771f0cf5ae58018f52","created_at":1704240917,"kind":10002,"tags":[["r","wss://140.f7z.io/"],["r","wss://nos.lol/"],["r","wss://offchain.pub/","read"],["r","wss://purplepag.es/"],["r","wss://pyramid.fiatjaf.com/"],["r","wss://relay.damus.io/"],["r","wss://relay.f7z.io/","write"],["r","wss://relay.nostr.band/"],["r","wss://relay.primal.net/"],["r","wss://relay.sovereignengineering.io/","read"]],"content":"","sig":"59bf77b7ed1852349d026965c588f5e48fd404bc12f7307ae2e03d0c96e6b9ba031021ef9abe7b2fc8253267d839bc4480a143f07ac653bcec23fc19e286e888"}"###,
     ###"{"id":"9f7295f64653094aa4c88ed8752582e0db02052295e9311eaf0ace6997fd5497","pubkey":"ee6ea13ab9fe5c4a68eaf9b1a34fe014a66b40117c50ee2a614f4cda959b6e74","created_at":1704126846,"kind":10002,"tags":[["r","wss://nostr.wine/"],["r","wss://relay.nostr.com.au/"],["r","wss://paid.spore.ws/"],["r","wss://nostr.plebchain.org/"],["r","wss://relay.orangepill.dev/"],["r","wss://nostr.inosta.cc/"],["r","wss://relay.damus.io/"],["r","wss://nostr.mutinywallet.com/"],["r","wss://relay.nostrati.com/"],["r","wss://lightningrelay.com/"],["r","wss://relay.current.fyi/"],["r","wss://eden.nostr.land/"],["r","wss://140.f7z.io/"],["r","wss://nostr.bitcoiner.social/"]],"content":"","sig":"f2317535fe289fea0c65f5528037eebdd3f24bdeef592fbb360aab2a73cb38838de2bf22043c6e94d167e975dd8beab495cd13782d0f60663841bbdce7c8dea3"}"###,
