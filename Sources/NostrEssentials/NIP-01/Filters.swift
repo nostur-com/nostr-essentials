@@ -31,7 +31,7 @@ public struct Filters: Encodable, REQelement, Hashable {
     public var until: Int?
     public var limit: Int?
     
-    public init(ids: Set<String>? = nil, authors: Set<String>? = nil, kinds: Set<Int>? = nil, tagFilter:TagFilter? = nil, since: Int? = nil, until: Int? = nil, limit: Int? = nil) {
+    public init(ids: Set<String>? = nil, authors: Set<String>? = nil, kinds: Set<Int>? = nil, tagFilter: TagFilter? = nil, since: Int? = nil, until: Int? = nil, limit: Int? = nil) {
         self.ids = ids
         self.authors = authors
         self.kinds = kinds
