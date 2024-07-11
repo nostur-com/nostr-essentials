@@ -102,4 +102,9 @@ public struct TagFilter: Hashable {
         self.tag = tag
         self.values = values
     }
+    
+    public init(tag: String, values: Set<String>) {
+        self.tag = tag
+        self.values = Array(values)
+    }
 }
