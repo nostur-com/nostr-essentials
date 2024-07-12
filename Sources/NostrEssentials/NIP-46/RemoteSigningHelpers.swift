@@ -47,7 +47,7 @@ public func parseBunkerUrl(_ input: String) -> BunkerURL? {
                    secret = value
                } else if key == "relay" {
                    if relay != nil { continue }
-                   relay = value
+                   relay = value.removingPercentEncoding ?? value
                }
            }
        }

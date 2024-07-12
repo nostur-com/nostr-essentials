@@ -35,6 +35,19 @@ final class Nip46Tests: XCTestCase {
         XCTAssertEqual(bunkerURL2.pubkey, "b55ca1f1aa95d5dc45877b8331a9598c53e38ef4a7bc436d765b11d660fc39c9")
         XCTAssertEqual(bunkerURL2.secret, "c57119f73dcad9d2fc08f807215132d1")
         XCTAssertEqual(bunkerURL2.relay, "wss://nos.lol") // first relay
+        
+        // test percent encoded relays
+        let input3 = "bunker://3740972e9a2807c38d131340b7bcbe1d1a093642a3d1285f0894ce8d51d4051f?relay=wss%3A%2F%2Fnos.lol&secret=KyZKDJqyROCR"
+        
+        let bunkerURL3 = parseBunkerUrl(input3)
+        
+        XCTAssertNotNil(bunkerURL3)
+        
+        guard let bunkerURL3 else { return }
+
+        XCTAssertEqual(bunkerURL2.pubkey, "b55ca1f1aa95d5dc45877b8331a9598c53e38ef4a7bc436d765b11d660fc39c9")
+        XCTAssertEqual(bunkerURL2.secret, "c57119f73dcad9d2fc08f807215132d1")
+        XCTAssertEqual(bunkerURL2.relay, "wss://nos.lol") // first relay
     }
 
 }
