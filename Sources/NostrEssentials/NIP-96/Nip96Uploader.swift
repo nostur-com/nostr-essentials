@@ -175,12 +175,12 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
                 state = .processing(percentage: percentage)
             }
             else if let uploadResponse = uploadResponse {
-                if let url = uploadResponse.nip94Event.tags.first(where: { $0.type == "url"} )?.value {
+                if let url = uploadResponse.nip94Event.tags.first(where: { $0.type == "url"} )?.value, !url.isEmpty {
                     
-                    if let dim = uploadResponse.nip94Event.tags.first(where: { $0.type == "dim"} )?.value, dim != "0x0" {
+                    if let dim = uploadResponse.nip94Event.tags.first(where: { $0.type == "dim"} )?.value, dim != "0x0" && dim != "" {
                         self.dim = dim
                     }
-                    if let hash = uploadResponse.nip94Event.tags.first(where: { $0.type == "x"} )?.value {
+                    if let hash = uploadResponse.nip94Event.tags.first(where: { $0.type == "x"} )?.value, hash != "" {
                         self.sha256 = hash
                     }
                     
