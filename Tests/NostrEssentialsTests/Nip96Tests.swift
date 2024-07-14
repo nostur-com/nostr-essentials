@@ -35,10 +35,16 @@ final class Nip96Tests: XCTestCase {
     
     func testMediaUpload() throws {
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+        // pubkey: 1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448
+        // npub: npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7
+        
 //        let filepath = Bundle.module.url(forResource: "nostur-add-nsecbunker", withExtension: "mov")
-        let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
+//        let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
+        let filepath = Bundle.module.url(forResource: "beerstr", withExtension: "png")
         let imageData = try Data(contentsOf: filepath!)
-        let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "https://nostrcheck.me/api/v2/media")!, mediaData: imageData)
+        let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "http://localhost:8080/wp-json/nostrmedia/v1/upload/")!, mediaData: imageData)
+//        let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "https://media.utxo.nl/wp-json/nostrmedia/v1/upload/")!, mediaData: imageData)
+//        let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "https://nostrcheck.me/api/v2/media")!, mediaData: imageData)
         let uploader = Nip96Uploader()
         uploader.queued = [mediaRequestBag]
                 
@@ -75,7 +81,8 @@ final class Nip96Tests: XCTestCase {
     
     func testMultipleMediaUploads() throws {
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
-        let apiUrl = URL(string: "https://nostrcheck.me/api/v2/media")!
+//        let apiUrl = URL(string: "https://nostrcheck.me/api/v2/media")!
+        let apiUrl = URL(string: "http://localhost:8080/wp-json/nostrmedia/v1/upload/")!
 //        let filepath = Bundle.module.url(forResource: "nostur-add-nsecbunker", withExtension: "mov")
         let filepath1 = Bundle.module.url(forResource: "upload-test", withExtension: "png")
         let imageData1 = try Data(contentsOf: filepath1!)
