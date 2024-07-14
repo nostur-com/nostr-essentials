@@ -267,7 +267,7 @@ public class ConnectionPool: ObservableObject {
         
         let plan: WritePlan = createWritePlan(pubkeys: pubkeys, ourWriteRelays: ourWriteRelays, preferredRelays: preferredRelays)
         
-        for (relay, pubkeys) in plan.relays
+        for (relay, _) in plan.relays
             .filter({ (relay: String, pubkeys: Set<String>) in
                 // Only relays that have .authors > 0
                 pubkeys.count > 0

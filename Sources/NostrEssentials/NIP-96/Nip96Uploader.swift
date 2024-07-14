@@ -56,6 +56,10 @@ public class Nip96Uploader: NSObject, ObservableObject {
                     promise(.failure(URLError(.badServerResponse)))
                     return
                 }
+                
+//                print("Response: \(httpResponse)")
+//                print("Data: \(String(data: data, encoding: .utf8) ?? "No data")")
+                
                 switch httpResponse.statusCode {
                     case 200, 201, 202:
                         do {

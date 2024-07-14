@@ -152,6 +152,9 @@ public func createRequestPlan(pubkeys: Set<String>,
         }
 
         // remove any pubkeys we already have accounted for in a previous request
+//        12.00 ms    0.1%    3.00 ms              specialized createRequestPlan(pubkeys:reqFilters:ourReadRelays:preferredRelays:skipTopRelays:)
+//        8.00 ms    0.0%    0 s               specialized Set.subtracting(_:)
+//        1.00 ms    0.0%    0 s               specialized Set.insert(_:)
         let pubkeysForThisRelay = relayPubkeys.intersection(pubkeys.subtracting(pubkeysAccountedFor))
         if pubkeysForThisRelay.isEmpty { continue }
         
