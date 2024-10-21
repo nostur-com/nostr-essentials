@@ -19,20 +19,32 @@ public func toJson(_ object:Encodable) -> String? {
 // Makes url lowercased
 // Removes :80 or :443
 public func normalizeRelayUrl(_ url:String) -> String {
-    let step1 = url.replacingOccurrences(of: "://", with: "")
+    let step1 = url.replacingOccurrences(of: "://", with: "") // to count slashes but not the first
     
-    if (step1.components(separatedBy:"/").count - 1) == 1 && url.suffix(1) == "/" {
-        return url.dropLast(1)
+    let step2 = if (step1.components(separatedBy:"/").count - 1) == 1 && url.suffix(1) == "/" { // only 1 trailing slash?
+        url
+            .replacingOccurrences(of: ":80/", with: "/")
+            .replacingOccurrences(of: ":443/", with: "/")
+            .dropLast(1)
             .lowercased()
-            .replacingOccurrences(of: ":80", with: "")
-            .replacingOccurrences(of: ":443", with: "")
+    }
+    else {
+        url
+            .replacingOccurrences(of: ":80/", with: "/")
+            .replacingOccurrences(of: ":443/", with: "/")
+            .lowercased()
     }
     
-    return url
-        .lowercased()
-        .replacingOccurrences(of: ":80", with: "")
-        .replacingOccurrences(of: ":443", with: "")
-    
+    return if step2.suffix(3) == ":80" {
+        String(step2.dropLast(3))
+    }
+    else if step2.suffix(4) == ":443" {
+        String(step2.dropLast(4))
+    }
+    else {
+        step2
+    }
+
     // "wss://example.com/" -> "wss://example.com"
     // "wss://example.com" -> "wss://example.com"
     // "wss://example.com/path" -> "wss://example.com/path"
