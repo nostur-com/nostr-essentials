@@ -243,7 +243,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         case ".mp4":
             "video/mp4"
         default:
-            "image/jpg"
+            "image/jpeg"
         }
         
         let boundary = UUID().uuidString
