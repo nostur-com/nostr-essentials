@@ -15,6 +15,11 @@ final class ShareableIdentifierTests: XCTestCase {
         
         XCTAssertEqual(nprofile.pubkey, "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d")
         XCTAssertEqual(nprofile.relays, ["wss://r.x.com","wss://djbas.sadkb.com"])
+
+        let nprofile2 = try ShareableIdentifier("nprofile1qqsdulkdrc5hdf4dktl6taxmsxnasykghdnf32sqmnc7w6km2hhav3gpzpmhxue69uhkummnw3ezumt0d5hsz9thwden5te0wfjkccte9ehx7um5wghxyee0qyqq78r794")
+        
+        XCTAssertEqual(nprofile2.pubkey, "de7ecd1e2976a6adb2ffa5f4db81a7d812c8bb6698aa00dcf1e76adb55efd645")
+        XCTAssertEqual(nprofile2.relays, ["wss://nostr.mom/","wss://relay.nostr.bg/",""])
     }
     
     func testDecodeNevent() throws {

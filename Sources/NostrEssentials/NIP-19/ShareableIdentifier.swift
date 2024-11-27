@@ -64,7 +64,7 @@ public class ShareableIdentifier: Hashable {
         
         var currentIndex = 0
         while currentIndex < tlvData.count {
-            guard currentIndex + 2 < tlvData.count else {
+            guard currentIndex + 2 <= tlvData.count else {
                 throw EncodingError.InvalidFormat
             }
             let type = tlvData[currentIndex]
