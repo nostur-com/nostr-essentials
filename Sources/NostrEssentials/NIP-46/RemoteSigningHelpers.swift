@@ -9,7 +9,7 @@ import Foundation
 
 public struct BunkerURL {
     public let pubkey: String
-    public let secret: String
+    public let secret: String?
     public var relay: String?
 }
 
@@ -52,10 +52,5 @@ public func parseBunkerUrl(_ input: String) -> BunkerURL? {
            }
        }
 
-       // Ensure we have both a pubkey and a secret
-       guard let unwrappedSecret = secret else {
-           return nil
-       }
-
-       return BunkerURL(pubkey: pubkey, secret: unwrappedSecret, relay: relay)
+       return BunkerURL(pubkey: pubkey, secret: secret, relay: relay)
 }
