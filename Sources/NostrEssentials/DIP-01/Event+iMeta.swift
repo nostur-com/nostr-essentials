@@ -20,6 +20,13 @@ public struct IMeta {
     public var dim: String?
     public var sha256: String?
     
+    public init(url: String, blurhash: String? = nil, dim: String? = nil, sha256: String? = nil) {
+        self.url = url
+        self.blurhash = blurhash
+        self.dim = dim
+        self.sha256 = sha256
+    }
+    
     public var dimSize: CGSize? {
         guard let dim = dim else { return nil }
         let dims = dim.components(separatedBy: "x")
