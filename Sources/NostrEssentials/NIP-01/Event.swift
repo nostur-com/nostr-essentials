@@ -87,11 +87,11 @@ public struct Event: Codable, Equatable, Identifiable {
         let sha256Serialized = self.computeIdDigest()
         let sig = try! keys.signature(for: sha256Serialized)
 
-        guard keys.publicKey.schnorr.isValidSignature(sig, for: sha256Serialized) else {
+        guard keys.publicKey.isValidSignature(sig, for: sha256Serialized) else {
             throw Keys.KeyError.SigningFailure
         }
 
-        self.sig = String(bytes:sig.rawRepresentation.bytes)
+        self.sig = String(bytes: sig.bytes)
         self.id = self.computeId(sha256Serialized)
 
         return self
@@ -104,14 +104,13 @@ public struct Event: Codable, Equatable, Identifiable {
             throw EventError.InvalidId
         }
 
-        let xOnlyKey = try secp256k1.Signing.XonlyKey(rawRepresentation: self.pubkey.bytes, keyParity: 1)
-        let publicKey = secp256k1.Signing.PublicKey(xonlyKey: xOnlyKey)
+        let xOnlyKey = try secp256k1.Schnorr.XonlyKey(dataRepresentation: self.pubkey.bytes, keyParity: 1)
 
         // signature from this event
-        let schnorrSignature = try secp256k1.Signing.SchnorrSignature(rawRepresentation: self.sig.bytes)
+        let schnorrSignature = try secp256k1.Schnorr.SchnorrSignature(dataRepresentation: self.sig.bytes)
 
         // public and signature from this event is valid?
-        guard publicKey.schnorr.isValidSignature(schnorrSignature, for: sha256Serialized) else {
+        guard xOnlyKey.isValidSignature(schnorrSignature, for: sha256Serialized) else {
             throw EventError.InvalidSignature
         }
 

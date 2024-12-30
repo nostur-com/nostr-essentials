@@ -11,14 +11,14 @@ import Foundation
 extension Keys {
     public func npub() -> String {
         let bech32 = Bech32()
-        let publicKeyData = Data(bytes: privateKey.publicKey.xonly.bytes, count: 32)
+        let publicKeyData = Data(bytes: privateKey.xonly.bytes, count: 32)
             .convertBits(from: 8, to: 5, pad: true)!
         return bech32.encode("npub", values: publicKeyData)
     }
     
     public func nsec() -> String {
         let bech32 = Bech32()
-        let privateKeyData = privateKey.rawRepresentation.convertBits(from: 8, to: 5, pad: true)!
+        let privateKeyData = privateKey.dataRepresentation.convertBits(from: 8, to: 5, pad: true)!
         return bech32.encode("nsec", values: privateKeyData)
     }
     

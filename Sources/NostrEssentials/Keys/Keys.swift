@@ -11,39 +11,39 @@ import CommonCrypto
 
 public struct Keys {
 
-    public let privateKey:secp256k1.Signing.PrivateKey
-    public let publicKey:secp256k1.Signing.PublicKey
+    public let privateKey: secp256k1.Schnorr.PrivateKey
+    public let publicKey: secp256k1.Schnorr.XonlyKey
     
-    public let privateKeyHex:String
-    public let publicKeyHex:String
+    public let privateKeyHex: String
+    public let publicKeyHex: String
 
-    public init(privateKey:secp256k1.Signing.PrivateKey) {
+    public init(privateKey: secp256k1.Schnorr.PrivateKey) {
         self.privateKey = privateKey
-        self.publicKey = privateKey.publicKey
-        self.privateKeyHex = String(bytes: privateKey.rawRepresentation.bytes)
-        self.publicKeyHex = String(bytes: privateKey.publicKey.xonly.bytes)
+        self.publicKey = privateKey.xonly
+        self.privateKeyHex = String(bytes: privateKey.dataRepresentation.bytes) 
+        self.publicKeyHex = String(bytes: privateKey.xonly.bytes)
     }
 
-    public init(privateKeyHex:String) throws {
+    public init(privateKeyHex: String) throws {
         do {
             let privateKeyBytes = try privateKeyHex.bytes
-            privateKey = try secp256k1.Signing.PrivateKey(rawRepresentation: privateKeyBytes)
-            publicKey = privateKey.publicKey
-            self.privateKeyHex = String(bytes: privateKey.rawRepresentation.bytes)
-            self.publicKeyHex = String(bytes: privateKey.publicKey.xonly.bytes)
+            privateKey = try secp256k1.Schnorr.PrivateKey(dataRepresentation: privateKeyBytes)
+            publicKey = privateKey.xonly
+            self.privateKeyHex = String(bytes: privateKey.dataRepresentation.bytes)
+            self.publicKeyHex = String(bytes: privateKey.xonly.bytes)
         }
         catch {
             throw KeyError.InvalidHex
         }
     }
 
-    public func signature<D: Digest>(for digest: D) throws -> secp256k1.Signing.SchnorrSignature {
-        return try privateKey.schnorr.signature(for: digest)
+    public func signature<D: Digest>(for digest: D) throws -> secp256k1.Schnorr.SchnorrSignature {
+        return try privateKey.signature(for: digest)
     }
 
     public static func newKeys() throws -> Keys {
         do {
-            return try self.init(privateKey: secp256k1.Signing.PrivateKey())
+            return try self.init(privateKey: secp256k1.Schnorr.PrivateKey())
         }
         catch {
             throw KeyError.NewKeyError
