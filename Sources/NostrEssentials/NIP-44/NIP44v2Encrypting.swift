@@ -1,9 +1,9 @@
 //
-//  NIP44v2Encrypting.swift
+//  NIP44v2Encrypting.swift from https://github.com/nostr-sdk/nostr-sdk-ios
 //
 //
 //  Created by Terry Yiu on 3/16/24.
-//
+//  Altered by Fabian Lachman on 30/12/2024
 
 import Foundation
 import CryptoKit
