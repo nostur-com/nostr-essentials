@@ -13,6 +13,7 @@ As of August 15th 2023, this project has just started, it will eventually:
 - Generate client relay messages (REQ, EVENT, CLOSE) 
 - Encode/Decode Shareable Identifiers (NIP-19)
 - Encrypt/Decrypt messages (NIP-04)
+- Encrypt/Decrypt messages (NIP-44)
 - Common nostr related regexes 
 - Content Parsing
 - Media uploading to NIP-96 compatible servers (NIP-96)
@@ -226,10 +227,27 @@ let bobKeys = try Keys(privateKeyHex: "4b22aa260e4acb7021e32f38a6cdf4b673c6a2777
 let clearMessage = "hello" // the message to encrypt
         
 // Encrypt a message
-let encryptedMessage = Keys.encryptDirectMessageContent(withPrivatekey: aliceKeys.privateKeyHex(), pubkey: bobKeys.publicKeyHex(), content: clearMessage)! // <cipher text>
+let encryptedMessage = Keys.encryptDirectMessageContent(withPrivatekey: aliceKeys.privateKeyHex, pubkey: bobKeys.publicKeyHex(), content: clearMessage)! // <cipher text>
                 
 // Decrypt a message
-let decryptedMessage = Keys.decryptDirectMessageContent(withPrivateKey: bobKeys.privateKeyHex(), pubkey: aliceKeys.publicKeyHex(), content: encryptedMessage) // "hello"
+let decryptedMessage = Keys.decryptDirectMessageContent(withPrivateKey: bobKeys.privateKeyHex, pubkey: aliceKeys.publicKeyHex(), content: encryptedMessage) // "hello"
+```
+
+## Encrypt/Decrypt messages (NIP-44)
+```swift
+import NostrEssentials
+
+// setup keys
+let aliceKeys = try Keys(privateKeyHex: "5c0c523f52a5b6fad39ed2403092df8cebc36318b39383bca6c00808626fab3a")
+let bobKeys = try Keys(privateKeyHex: "4b22aa260e4acb7021e32f38a6cdf4b673c6a277755bfce287e370c924dc936d")
+
+let clearMessage = "hello" // the message to encrypt
+        
+// Encrypt a message
+let encryptedMessage = Keys.encryptDirectMessageContent44(withPrivatekey: aliceKeys.privateKeyHex, pubkey: bobKeys.publicKeyHex, content: clearMessage)! // <cipher text> 
+                
+// Decrypt a message
+let decryptedMessage = Keys.decryptDirectMessageContent44(withPrivateKey: bobKeys.privateKeyHex, pubkey: aliceKeys.publicKeyHex, content: encryptedMessage) // "hello"
 ```
 
 ## Nostr regexes
