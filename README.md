@@ -20,6 +20,7 @@ As of August 15th 2023, this project has just started, it will eventually:
 - HTTP Auth (NIP-98)
 - Connecting to relays, sending/receiving
 - Parse relay messages
+- Lookup nostr address (NIP-05)
 
 ## Install in Xcode
 - Open your project or create a new project
@@ -403,6 +404,15 @@ if let parsedEvent = try? parseRelayMessage(text: message, relay: url),
     print(subId) // "SUBID-1"
     print(event.id) // "c948ad1d37abfafd887d74194f5649cce3c94711aa5eeed7e8a4ee5e4fd1dbe1"
 }
+```
+
+## Look up nostr address (NIP-05)
+
+```swift
+import NostrEssentials
+
+let pubkey = try await lookupNip05("fabian@nostur.com")
+print(pubkey) // 9be0be0e64d38a29a9cec9a5c8ef5d873c2bfa5362a4b558da5ff69bc3cbb81e
 ```
 
 See /Tests/NostrEssentialsTests for more examples
