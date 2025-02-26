@@ -27,15 +27,17 @@ public struct Filters: Encodable, REQelement, Hashable {
     public var authors: Set<String>?
     public var kinds: Set<Int>?
     public var tagFilter: TagFilter?
+    public var tagFilters: [TagFilter]
     public var since: Int?
     public var until: Int?
     public var limit: Int?
     
-    public init(ids: Set<String>? = nil, authors: Set<String>? = nil, kinds: Set<Int>? = nil, tagFilter: TagFilter? = nil, since: Int? = nil, until: Int? = nil, limit: Int? = nil) {
+    public init(ids: Set<String>? = nil, authors: Set<String>? = nil, kinds: Set<Int>? = nil, tagFilter: TagFilter? = nil, tagFilters: [TagFilter] = [], since: Int? = nil, until: Int? = nil, limit: Int? = nil) {
         self.ids = ids
         self.authors = authors
         self.kinds = kinds
         self.tagFilter = tagFilter
+        self.tagFilters = tagFilters
         self.since = since
         self.until = until
         self.limit = limit
@@ -66,6 +68,12 @@ public struct Filters: Encodable, REQelement, Hashable {
         
         // Special encoding for tagFilter
         if let tagFilter = tagFilter {
+            var nestedContainer = encoder.container(keyedBy: DynamicKey.self)
+            let key = DynamicKey(stringValue: "#\(tagFilter.tag)")!
+            try nestedContainer.encode(tagFilter.values, forKey: key)
+        }
+        
+        for tagFilter in tagFilters {
             var nestedContainer = encoder.container(keyedBy: DynamicKey.self)
             let key = DynamicKey(stringValue: "#\(tagFilter.tag)")!
             try nestedContainer.encode(tagFilter.values, forKey: key)
