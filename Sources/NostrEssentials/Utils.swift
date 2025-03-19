@@ -18,36 +18,39 @@ public func toJson(_ object:Encodable) -> String? {
 // Removes trailing slash, but only if its not part of path
 // Makes url lowercased
 // Removes :80 or :443
-public func normalizeRelayUrl(_ url: String) -> String {
-    guard let urlObj = URL(string: url) else {
-        return url.lowercased()
+public func normalizeRelayUrl(_ url:String) -> String {
+    let step1 = url.replacingOccurrences(of: "://", with: "") // to count slashes but not the first
+    
+    let step2 = if (step1.components(separatedBy:"/").count - 1) == 1 && url.suffix(1) == "/" { // only 1 trailing slash?
+        url
+            .replacingOccurrences(of: ":80/", with: "/")
+            .replacingOccurrences(of: ":443/", with: "/")
+            .dropLast(1)
+            .lowercased()
+    }
+    else {
+        url
+            .replacingOccurrences(of: ":80/", with: "/")
+            .replacingOccurrences(of: ":443/", with: "/")
+            .lowercased()
     }
     
-    var components = URLComponents(url: urlObj, resolvingAgainstBaseURL: false)!
-    
-    // Normalize path: remove trailing slash if path is "/"
-    if components.path == "/" {
-        components.path = ""
+    return if step2.suffix(3) == ":80" {
+        String(step2.dropLast(3))
     }
-    
-    // Remove default ports (80 for "ws", 443 for "wss")
-    let defaultPortForScheme: [String: Int] = ["ws": 80, "wss": 443]
-    if let port = components.port, let scheme = components.scheme,
-       port == defaultPortForScheme[scheme] {
-        components.port = nil
+    else if step2.suffix(4) == ":443" {
+        String(step2.dropLast(4))
     }
-    
-    // Lowercase each part before reconstructing
-    components.scheme = components.scheme?.lowercased()
-    components.host = components.host?.lowercased()
-    components.path = components.path.lowercased()
-    
-    // Manually construct the string for efficiency
-    var normalizedUrl = components.scheme! + "://" + components.host!
-    if let port = components.port {
-        normalizedUrl += ":" + String(port)
+    else {
+        step2
     }
-    normalizedUrl += components.path
-    
-    return normalizedUrl
+
+    // "wss://example.com/" -> "wss://example.com"
+    // "wss://example.com" -> "wss://example.com"
+    // "wss://example.com/path" -> "wss://example.com/path"
+    // "wss://example.com/path/" -> "wss://example.com/path/"
+    // "ws://example.com:80/" -> "ws://example.com"
+    // "wss://example.com:443" -> "wss://example.com"
+    // "wss://example.com:443/path" -> "wss://example.com/path"
+    // "wss://example.com:443/path/" -> "wss://example.com/path/"
 }
