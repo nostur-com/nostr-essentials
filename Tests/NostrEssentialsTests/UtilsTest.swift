@@ -26,6 +26,8 @@ struct UtilsTest {
         #expect(normalizeRelayUrl("ws://example.com:80") == "ws://example.com")
         #expect(normalizeRelayUrl("ws://example.com:80/path") == "ws://example.com/path")
         #expect(normalizeRelayUrl("ws://example.com:80/path/") == "ws://example.com/path/")
+        #expect(normalizeRelayUrl("broken") == "broken")
+        #expect(normalizeRelayUrl("") == "")
     }
 
 }
