@@ -135,42 +135,76 @@ public func createRequestPlan(pubkeys: Set<String>,
     var pubkeysAccountedFor: Set<String> = []
     var skipped = 0
     
-    // Create outbox requests per relay
-    for (relay, relayPubkeys) in preferredRelays.findEventsRelays
-        // Don't use a relay that is already in our main relay set, we want redundancy
-        .filter({ item in !ourReadRelays.contains(item.key) }) // <-- TODO: FILTER OR NOT (SPEED VS REDUDANCY)
-            
+    
+    // Never skip relays if we are just looking for a single pubkey (like profile view)
+    let singlePubkeyRequest = pubkeys.count == 1
+    
+    let outBoxRequestByRelay: [(String, Set<String>)] = preferredRelays.findEventsRelays
+
+        // Skip relays that are already queried in normal pre-outbox req
+        .filter({ item in !ourReadRelays.contains(item.key) })
+    
         // Only use the outbox relays for the pubkeys in this request
         .filter({ item in item.value.intersection(pubkeys).count > 0 })
-
+    
         // Sort the relays by most pubkeys
         .sorted(by: { $0.value.count > $1.value.count })
-    {
-        if skipped < skipTopRelays { // Skip top relays so we don't end up using the same centralized relays again
-            skipped = skipped + 1
-            continue
+    
+    
+    if singlePubkeyRequest { // Try to find 2 relays then done
+        let thePubkey = pubkeys.first!
+        var relaysFound = 0
+        for (relay, relayPubkeys) in outBoxRequestByRelay {
+            if relaysFound >= 2 { break }
+            if relayPubkeys.contains(thePubkey) {
+                // Take the original request and set the pubkeys for this relay as authors
+                let relayScopedFilters = reqFilters.map { filter in
+                    var scopedAuthorsFilter = filter
+                    scopedAuthorsFilter.authors = pubkeys
+                    return scopedAuthorsFilter
+                }
+                
+                // Represent the request as a OutboxRequest struct for easier handling in other parts of app
+                // Save it in a dict where the key is the relay url for this request
+                findEventsRequests[relay] = FindEventsRequest(pubkeys: pubkeys, filters: relayScopedFilters)
+                
+                relaysFound += 1
+            }
         }
-
-        // remove any pubkeys we already have accounted for in a previous request
-//        12.00 ms    0.1%    3.00 ms              specialized createRequestPlan(pubkeys:reqFilters:ourReadRelays:preferredRelays:skipTopRelays:)
-//        8.00 ms    0.0%    0 s               specialized Set.subtracting(_:)
-//        1.00 ms    0.0%    0 s               specialized Set.insert(_:)
-        let pubkeysForThisRelay = relayPubkeys.intersection(pubkeys.subtracting(pubkeysAccountedFor))
-        if pubkeysForThisRelay.isEmpty { continue }
-        
-        // Take the original request and set the pubkeys for this relay as authors
-        let relayScopedFilters = reqFilters.map { filter in
-            var scopedAuthorsFilter = filter
-            scopedAuthorsFilter.authors = pubkeysForThisRelay
-            return scopedAuthorsFilter
+    }
+    else { // Try to find least relays with most pubkeys for efficiency
+        for (relay, relayPubkeys) in outBoxRequestByRelay {
+            
+            if (skipped < skipTopRelays) { // Skip top relays so we don't end up using the same centralized relays again.
+                skipped = skipped + 1
+                continue
+            }
+            
+            
+            // Skip relays for which we already have findEventsRequest with that pubkey
+            let pubkeysForThisRelayOnly = relayPubkeys.intersection(pubkeys.subtracting(pubkeysAccountedFor))
+            if pubkeysForThisRelayOnly.isEmpty { continue }
+            
+            
+            // Take the original request and set the pubkeys for this relay as authors
+            let relayScopedFilters = reqFilters.map { filter in
+                var scopedAuthorsFilter = filter
+                scopedAuthorsFilter.authors = pubkeysForThisRelayOnly
+                return scopedAuthorsFilter
+            }
+            
+            // Represent the request as a OutboxRequest struct for easier handling in other parts of app
+            // Save it in a dict where the key is the relay url for this request
+            findEventsRequests[relay] = FindEventsRequest(pubkeys: pubkeysForThisRelayOnly, filters: relayScopedFilters)
+            
+            // Track which pubkeys we already have requests so we can skip them in the the next iteration
+            pubkeysAccountedFor.formUnion(pubkeysForThisRelayOnly)
         }
+    }
         
-        // Represent the request as a OutboxRequest struct for easier handling in other parts of app
-        // Save it in a dict where the key is the relay url for this request
-        findEventsRequests[relay] = FindEventsRequest(pubkeys: pubkeysForThisRelay, filters: relayScopedFilters)
-        
-        // Track which pubkeys we already have requests so we can skip them in the the next iteration
-        pubkeysAccountedFor.formUnion(pubkeysForThisRelay)
+    for findEventsRequest in findEventsRequests.sorted(by: { $0.value.pubkeys.count > $1.value.pubkeys.count }) {
+        let relay = findEventsRequest.key
+        let pubkeysCount = findEventsRequest.value.pubkeys.count
     }
      
     return RequestPlan(
