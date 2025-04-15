@@ -17,6 +17,7 @@ struct UtilsTest {
         #expect(normalizeRelayUrl("wss://example.com/") == "wss://example.com")
         #expect(normalizeRelayUrl("wss://example.com") == "wss://example.com")
         #expect(normalizeRelayUrl("wss://example.com/path") == "wss://example.com/path")
+        #expect(normalizeRelayUrl("wss://example.com/PATH") != "wss://example.com/path")
         #expect(normalizeRelayUrl("wss://example.com/path/") == "wss://example.com/path/")
         #expect(normalizeRelayUrl("ws://example.com:80/") == "ws://example.com")
         #expect(normalizeRelayUrl("wss://example.com:443") == "wss://example.com")

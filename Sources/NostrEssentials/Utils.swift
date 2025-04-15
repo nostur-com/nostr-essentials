@@ -23,7 +23,7 @@ public func normalizeRelayUrl(_ url: String) -> String {
           let components = URLComponents(url: urlObj, resolvingAgainstBaseURL: false),
           let scheme = components.scheme,
           let host = components.host else {
-        return url.lowercased()
+        return url
     }
     
     var mutableComponents = components
@@ -39,13 +39,12 @@ public func normalizeRelayUrl(_ url: String) -> String {
     
     let schemeLower = scheme.lowercased()
     let hostLower = host.lowercased()
-    let pathLower = mutableComponents.path.lowercased()
     
     var normalizedUrl = schemeLower + "://" + hostLower
     if let port = mutableComponents.port {
         normalizedUrl = normalizedUrl + ":" + String(port)
     }
-    normalizedUrl = normalizedUrl + pathLower
+    normalizedUrl = normalizedUrl + mutableComponents.path
     
     return normalizedUrl
 }
