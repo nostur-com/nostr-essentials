@@ -31,7 +31,7 @@ public class Nip96Uploader: NSObject, ObservableObject {
     public var onFinish: (() -> Void)? = nil
     
     public func uploadingPublisher(for mediaRequestBag: MediaRequestBag, keys: Keys) -> AnyPublisher<MediaRequestBag, Error> {
-        let authorization = (try? mediaRequestBag.getAuthorizationHeader(keys)) ?? ""
+        let authorization = (try? Self.getAuthorizationHeader(keys, apiUrl: mediaRequestBag.apiUrl, method: mediaRequestBag.method, sha256hex: mediaRequestBag.sha256hex)) ?? ""
             
         let config = URLSessionConfiguration.default
         let session = URLSession(configuration: config, delegate: mediaRequestBag, delegateQueue: nil)
@@ -42,7 +42,6 @@ public class Nip96Uploader: NSObject, ObservableObject {
         request.setValue(contentType, forHTTPHeaderField: "Content-Type")
         request.setValue(authorization, forHTTPHeaderField: "Authorization")
         request.setValue("\(mediaRequestBag.httpBody.count)", forHTTPHeaderField: "Content-Length")
-//        print("Sending header: \(authorization)")
         request.httpBody = mediaRequestBag.httpBody
         
         mediaRequestBag.state = .uploading(percentage: 0)
@@ -151,133 +150,8 @@ public class Nip96Uploader: NSObject, ObservableObject {
             .collect()
             .eraseToAnyPublisher()
     }
-}
-
-public enum errors: Error {
-    case invalidApiUrl
-}
-
-public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessionTaskDelegate {
     
-    public static func == (lhs: MediaRequestBag, rhs: MediaRequestBag) -> Bool {
-        lhs.id == rhs.id
-    }
-
-    public var id: String { (sha256hex + apiUrl.absoluteString) }
-    
-    public var apiUrl: URL
-    public var method: String
-    public var httpBody: Data
-    public var sha256hex: String
-    public var boundary: String
-    public var contentLength: Int
-    
-    public var uploadResponse: UploadResponse? {
-        didSet {
-            self.objectWillChange.send()
-            if let status = uploadResponse?.status, status == "processing", let percentage = uploadResponse?.percentage {
-                state = .processing(percentage: percentage)
-            }
-            else if let uploadResponse = uploadResponse {
-                if let url = uploadResponse.nip94Event.tags.first(where: { $0.type == "url"} )?.value, !url.isEmpty {
-                    
-                    if let dim = uploadResponse.nip94Event.tags.first(where: { $0.type == "dim"} )?.value, dim != "0x0" && dim != "" {
-                        self.dim = dim
-                    }
-                    if let hash = uploadResponse.nip94Event.tags.first(where: { $0.type == "x"} )?.value, hash != "" {
-                        self.sha256 = hash
-                    }
-                    
-                    downloadUrl = url
-                    state = .success(url)
-                }
-                else {
-                    state = .error(message: "Media service did not return url")
-                }
-            }
-            else {
-                state = .error(message: "Media service did not return url")
-            }
-        }
-    }
-    @Published public var state: UploadState = .initializing
-    @Published public var downloadUrl: String?
-    public var dim: String? // "640x480" dimensions of processed image in imeta format  (DIP-01)
-    public var sha256: String? // hash of processed image
-    
-    public var finished: Bool { // helper because we can't do == on enum with param
-        switch state {
-        case .success(_):
-            return true
-        default:
-            return false
-        }
-    }
-    
-    private let uploadtype: String // "avatar" "banner" or "media"
-    private let filename: String
-    private let mediaData: Data
-    public let index: Int
-    
-    public init(apiUrl: URL, method: String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0) {
-        self.apiUrl = apiUrl
-        self.method = method
-        self.uploadtype = uploadtype
-        self.filename = filename
-        self.mediaData = mediaData
-        self.index = index
-        
-        let body = NSMutableData()
-        
-        let contentType = switch filename.suffix(4) {
-        case ".3gp":
-            "video/3gpp"
-        case ".mov":
-            "video/quicktime"
-        case ".ogg":
-            "video/ogg"
-        case ".webm":
-            "video/webm"
-        case ".png":
-            "image/png"
-        case ".mp4":
-            "video/mp4"
-        default:
-            "image/jpeg"
-        }
-        
-        let boundary = UUID().uuidString
-        self.boundary = boundary
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"mediafile\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
-        body.append(mediaData)
-        
-        body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"uploadtype\"\r\n\r\n".data(using: .utf8)!)
-        body.append(uploadtype.data(using: .utf8)!)
-        
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        self.httpBody = body as Data
-        
-        self.sha256hex = httpBody.sha256().hexEncodedString()
-        let contentLength = self.httpBody.count
-        self.contentLength = contentLength
-        super.init()
-        progressSubject
-            .receive(on: RunLoop.main)
-            .sink { [weak self] totalBytesSent in
-//                print("processResponse: totalBytesSent (index: \(index)) \(totalBytesSent)")
-                let progress = totalBytesSent / Float(contentLength)
-                if progress > 0.01 && progress < 1.0 {
-                    self?.state = .uploading(percentage: min(100,Int(ceil(progress * 100))))
-                }
-            }
-            .store(in: &subscriptions)
-    }
-    
-    public func getAuthorizationHeader(_ keys: Keys) throws -> String {
+    public static func getAuthorizationHeader(_ keys: Keys, apiUrl: URL, method: String, sha256hex: String) throws -> String {
         var unsignedEvent = Event(
             pubkey: keys.publicKeyHex,
             content: "",
@@ -290,19 +164,14 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         )
         
         let signedEvent = try unsignedEvent.sign(keys)
-//        print("Sending 27235: \(signedEvent.json() ?? "")")
+
         guard let base64 = signedEvent.base64() else { throw NSError(domain: "Unable to create json() or base64", code: 999) }
         return "Nostr \(base64)"
     }
-    
-    // --- MARK: URLSessionTaskDelegate
-    
-    private var progressSubject = PassthroughSubject<Float, Never>()
-    private var subscriptions = Set<AnyCancellable>()
-    
-    public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
-        progressSubject.send(Float(totalBytesSent))
-    }
+}
+
+public enum errors: Error {
+    case invalidApiUrl
 }
 
 public enum UploadState: Equatable, Hashable {

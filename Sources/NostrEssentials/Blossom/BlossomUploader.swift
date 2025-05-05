@@ -1,0 +1,136 @@
+//
+//  BlossomUploader.swift
+//
+//
+//  Created by Fabian Lachman on 05/05/2025.
+//
+
+import Foundation
+import SwiftUI
+import Combine
+
+public class BlossomUploader: NSObject, ObservableObject {
+    
+    private let server: URL
+    
+    private var uploadUrl: URL { server.appendingPathComponent("upload") }
+    private var mediaUrl: URL { server.appendingPathComponent("media") }
+    
+    @Published public var queued: [BlossomUploadItem] = []
+    
+    public var total: Int { queued.count }
+    public var finished: Bool {
+        let successCount = queued.filter({ bag in
+            switch bag.state {
+            case .success(_):
+                return true
+            default:
+                return false
+            }
+        }).count
+        return total == successCount && total != 0
+    }
+    
+    public init(_ server: URL) {
+        self.server = server
+    }
+    
+    private var subscriptions = Set<AnyCancellable>()
+    public var onFinish: (() -> Void)? = nil
+    
+    public func uploadingPublisher(for uploadItem: BlossomUploadItem, keys: Keys) -> AnyPublisher<BlossomUploadItem, Error> {
+        let authorization = (try? Self.getAuthorizationHeader(keys, sha256hex: uploadItem.sha256)) ?? ""
+            
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config, delegate: uploadItem, delegateQueue: nil)
+        
+        var request = URLRequest(url: mediaUrl)
+        request.httpMethod = "PUT"
+        if let contentType = uploadItem.contentType {
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        }
+        request.setValue(authorization, forHTTPHeaderField: "Authorization")
+        request.setValue("\(uploadItem.mediaData.count)", forHTTPHeaderField: "Content-Length")
+        request.httpBody = uploadItem.mediaData
+        
+        uploadItem.state = .uploading(percentage: 0)
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase        
+
+        return Future { promise in
+            session.dataTask(with: request) { (data, response, error) in
+                guard let data = data, let httpResponse = response as? HTTPURLResponse else {
+                    promise(.failure(URLError(.badServerResponse)))
+                    return
+                }
+                
+                print("Response: \(httpResponse)")
+                print("Data: \(String(data: data, encoding: .utf8) ?? "No data")")
+                
+                switch httpResponse.statusCode {
+                    case 200, 201, 202:
+                        do {
+                            let uploadResponse = try decoder.decode(BlossomUploadResponse.self, from: data)
+                            DispatchQueue.main.async {
+                                self.objectWillChange.send()
+                                uploadItem.uploadResponse = uploadResponse
+                                promise(.success(uploadItem))
+                            }
+                        } catch {
+                            promise(.failure(error))
+                        }
+                    case 401:
+                        promise(.failure(URLError(.userAuthenticationRequired)))
+                    default:
+                        promise(.failure(URLError(.badServerResponse)))
+                }
+            }.resume()
+        }.eraseToAnyPublisher()
+    }
+    
+    public func processResponse(uploadItem: BlossomUploadItem) {
+        guard let response = uploadItem.uploadResponse else { return }
+        self.objectWillChange.send()
+        uploadItem.uploadResponse = response
+        
+        if (self.finished) {
+            self.onFinish?()
+            self.onFinish = nil
+        }
+    }
+    
+    public func uploadingPublishers(for uploadItems: [BlossomUploadItem], keys: Keys) -> AnyPublisher<[BlossomUploadItem], Error> {
+        let uploadingPublishers = uploadItems.map { uploadingPublisher(for: $0, keys: keys) }
+        return Publishers.MergeMany(uploadingPublishers)
+            .collect()
+            .eraseToAnyPublisher()
+    }
+    
+    public static func getAuthorizationHeader(_ keys: Keys, sha256hex: String, type: UploadType = .media) throws -> String {
+                        
+        // 5 minutes from now timestamp
+        let expirationTimestamp = Int(Date().timeIntervalSince1970) + 300
+        
+        var unsignedEvent = Event(
+            pubkey: keys.publicKeyHex,
+            content: "Upload",
+            kind: 24242,
+            tags: [
+                Tag(["t", type.rawValue]),
+                Tag(["x", sha256hex]), // hash of file
+                Tag(["expiration", expirationTimestamp.description]),
+            ]
+        )
+        
+        let signedEvent = try unsignedEvent.sign(keys)
+
+        guard let base64 = signedEvent.base64() else { throw NSError(domain: "Unable to create json() or base64", code: 999) }
+        return "Nostr \(base64)"
+    }
+    
+    public enum UploadType: String {
+        case upload = "upload"
+        case media = "media"
+    }
+}
