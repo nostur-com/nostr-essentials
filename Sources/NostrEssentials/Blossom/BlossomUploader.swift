@@ -107,7 +107,7 @@ public class BlossomUploader: NSObject, ObservableObject {
             .eraseToAnyPublisher()
     }
     
-    public static func getAuthorizationHeader(_ keys: Keys, sha256hex: String, type: UploadType = .media) throws -> String {
+    public static func getAuthorizationHeader(_ keys: Keys, sha256hex: String, action: Verb = .upload) throws -> String {
                         
         // 5 minutes from now timestamp
         let expirationTimestamp = Int(Date().timeIntervalSince1970) + 300
@@ -117,7 +117,7 @@ public class BlossomUploader: NSObject, ObservableObject {
             content: "Upload",
             kind: 24242,
             tags: [
-                Tag(["t", type.rawValue]),
+                Tag(["t", action.rawValue]),
                 Tag(["x", sha256hex]), // hash of file
                 Tag(["expiration", expirationTimestamp.description]),
             ]
@@ -129,9 +129,11 @@ public class BlossomUploader: NSObject, ObservableObject {
         return "Nostr \(base64)"
     }
     
-    public enum UploadType: String {
+    public enum Verb: String {
+        case get = "get"
         case upload = "upload"
-        case media = "media"
+        case list = "list"
+        case delete = "delete"
     }
 }
 

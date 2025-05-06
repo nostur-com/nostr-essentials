@@ -91,7 +91,7 @@ final class BlossomTests: XCTestCase {
             content: "Upload and expect processing",
             kind: 24242,
             tags: [
-                Tag(["t", "media"]),
+                Tag(["t", "upload"]),
                 Tag(["x", "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"]),
                 Tag(["expiration", "1808858680"]),
             ]
@@ -102,7 +102,7 @@ final class BlossomTests: XCTestCase {
         
         XCTAssertEqual(signedEvent.kind, 24242)
         XCTAssertEqual(signedEvent.tags[0].type, "t")
-        XCTAssertEqual(signedEvent.tags[0].value, "media")
+        XCTAssertEqual(signedEvent.tags[0].value, "upload")
         
         XCTAssertEqual(signedEvent.tags[1].type, "x")
         XCTAssertEqual(signedEvent.tags[1].value, "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961")
