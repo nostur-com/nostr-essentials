@@ -134,3 +134,24 @@ public class BlossomUploader: NSObject, ObservableObject {
         case media = "media"
     }
 }
+
+
+// Helper to test if a given server url supports image uploading
+public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool {
+    let mediaUrl = serverURL.appendingPathComponent("media")
+    let testHash = "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"
+    let authorization = (try? BlossomUploader.getAuthorizationHeader(keys, sha256hex: testHash)) ?? ""
+            
+    let config = URLSessionConfiguration.default
+    let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
+        
+    var request = URLRequest(url: mediaUrl)
+    request.httpMethod = "HEAD"
+    request.setValue("image/png", forHTTPHeaderField: "X-Content-Type")
+    request.setValue(authorization, forHTTPHeaderField: "Authorization")
+    request.setValue("184292", forHTTPHeaderField: "X-Content-Length")
+    request.setValue(testHash, forHTTPHeaderField: "X-SHA-256")
+
+    let (_, response) = try await session.data(for: request)
+    return (response as? HTTPURLResponse)?.statusCode == 200
+}
