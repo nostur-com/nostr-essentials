@@ -145,6 +145,8 @@ public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool
     let authorization = (try? BlossomUploader.getAuthorizationHeader(keys, sha256hex: testHash)) ?? ""
             
     let config = URLSessionConfiguration.default
+    config.requestCachePolicy = .reloadIgnoringLocalCacheData // Disable cache
+    config.urlCache = nil // Ensure no caching
     let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
         
     var request = URLRequest(url: mediaUrl)
