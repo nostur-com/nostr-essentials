@@ -38,8 +38,8 @@ public class BlossomUploader: NSObject, ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
     public var onFinish: (() -> Void)? = nil
     
-    public func uploadingPublisher(for uploadItem: BlossomUploadItem, keys: Keys) -> AnyPublisher<BlossomUploadItem, Error> {
-        let authorization = (try? Self.getAuthorizationHeader(keys, sha256hex: uploadItem.sha256)) ?? ""
+    public func uploadingPublisher(for uploadItem: BlossomUploadItem) -> AnyPublisher<BlossomUploadItem, Error> {
+        
             
         let config = URLSessionConfiguration.default
         let session = URLSession(configuration: config, delegate: uploadItem, delegateQueue: nil)
@@ -49,7 +49,7 @@ public class BlossomUploader: NSObject, ObservableObject {
         if let contentType = uploadItem.contentType {
             request.setValue(contentType, forHTTPHeaderField: "Content-Type")
         }
-        request.setValue(authorization, forHTTPHeaderField: "Authorization")
+        request.setValue(uploadItem.authorizationHeader, forHTTPHeaderField: "Authorization")
         request.setValue("\(uploadItem.mediaData.count)", forHTTPHeaderField: "Content-Length")
         request.httpBody = uploadItem.mediaData
         
@@ -101,32 +101,10 @@ public class BlossomUploader: NSObject, ObservableObject {
     }
     
     public func uploadingPublishers(for uploadItems: [BlossomUploadItem], keys: Keys) -> AnyPublisher<[BlossomUploadItem], Error> {
-        let uploadingPublishers = uploadItems.map { uploadingPublisher(for: $0, keys: keys) }
+        let uploadingPublishers = uploadItems.map { uploadingPublisher(for: $0) }
         return Publishers.MergeMany(uploadingPublishers)
             .collect()
             .eraseToAnyPublisher()
-    }
-    
-    public static func getAuthorizationHeader(_ keys: Keys, sha256hex: String, action: Verb = .upload) throws -> String {
-                        
-        // 5 minutes from now timestamp
-        let expirationTimestamp = Int(Date().timeIntervalSince1970) + 300
-        
-        var unsignedEvent = Event(
-            pubkey: keys.publicKeyHex,
-            content: "Upload",
-            kind: 24242,
-            tags: [
-                Tag(["t", action.rawValue]),
-                Tag(["x", sha256hex]), // hash of file
-                Tag(["expiration", expirationTimestamp.description]),
-            ]
-        )
-        
-        let signedEvent = try unsignedEvent.sign(keys)
-
-        guard let base64 = signedEvent.base64() else { throw NSError(domain: "Unable to create json() or base64", code: 999) }
-        return "Nostr \(base64)"
     }
     
     public enum Verb: String {
@@ -142,7 +120,7 @@ public class BlossomUploader: NSObject, ObservableObject {
 public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool {
     let mediaUrl = serverURL.appendingPathComponent("media")
     let testHash = "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"
-    let authorization = (try? BlossomUploader.getAuthorizationHeader(keys, sha256hex: testHash)) ?? ""
+    let authorization = (try? getBlossomAuthorizationHeader(keys, sha256hex: testHash)) ?? ""
             
     let config = URLSessionConfiguration.default
     config.requestCachePolicy = .reloadIgnoringLocalCacheData // Disable cache
@@ -158,4 +136,26 @@ public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool
 
     let (_, response) = try await session.data(for: request)
     return (response as? HTTPURLResponse)?.statusCode == 200
+}
+
+public func getBlossomAuthorizationHeader(_ keys: Keys, sha256hex: String, action: BlossomUploader.Verb = .upload) throws -> String {
+                    
+    // 5 minutes from now timestamp
+    let expirationTimestamp = Int(Date().timeIntervalSince1970) + 300
+    
+    var unsignedEvent = Event(
+        pubkey: keys.publicKeyHex,
+        content: "Upload",
+        kind: 24242,
+        tags: [
+            Tag(["t", action.rawValue]),
+            Tag(["x", sha256hex]), // hash of file
+            Tag(["expiration", expirationTimestamp.description]),
+        ]
+    )
+    
+    let signedEvent = try unsignedEvent.sign(keys)
+
+    guard let base64 = signedEvent.base64() else { throw NSError(domain: "Unable to create json() or base64", code: 999) }
+    return "Nostr \(base64)"
 }

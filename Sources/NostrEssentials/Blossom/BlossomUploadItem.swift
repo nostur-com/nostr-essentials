@@ -19,7 +19,7 @@ public class BlossomUploadItem: NSObject, Identifiable, ObservableObject, URLSes
     public var contentType: String?
     public var sha256: String
     public var sha256processed: String?
-    
+    public var authorizationHeader: String
     
     public var uploadResponse: BlossomUploadResponse? {
         didSet {
@@ -67,12 +67,13 @@ public class BlossomUploadItem: NSObject, Identifiable, ObservableObject, URLSes
     public let mediaData: Data
     public let index: Int
     
-    public init(data: Data, index: Int = 0, contentType: String? = nil) {
+    public init(data: Data, index: Int = 0, contentType: String? = nil, authorizationHeader: String) {
         self.index = index
         self.sha256 = data.sha256().hexEncodedString()
         let contentLength = data.count
         self.mediaData = data
         self.contentType = contentType
+        self.authorizationHeader = authorizationHeader
         
         super.init()
         
