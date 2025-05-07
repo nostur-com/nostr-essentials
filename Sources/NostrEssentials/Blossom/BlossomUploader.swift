@@ -111,6 +111,7 @@ public class BlossomUploader: NSObject, ObservableObject {
     public enum Verb: String {
         case get = "get"
         case upload = "upload"
+        case media = "media"
         case list = "list"
         case delete = "delete"
     }
@@ -147,7 +148,7 @@ public class BlossomUploader: NSObject, ObservableObject {
 public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool {
     let mediaUrl = serverURL.appendingPathComponent("media")
     let testHash = "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"
-    let authorization = (try? getBlossomAuthorizationHeader(keys, sha256hex: testHash)) ?? ""
+    let authorization = (try? getBlossomAuthorizationHeader(keys, sha256hex: testHash, action: .media)) ?? ""
             
     let config = URLSessionConfiguration.default
     config.requestCachePolicy = .reloadIgnoringLocalCacheData // Disable cache
@@ -165,7 +166,7 @@ public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool
     return (response as? HTTPURLResponse)?.statusCode == 200
 }
 
-public func getBlossomAuthorizationHeader(_ keys: Keys, sha256hex: String, action: BlossomUploader.Verb = .upload) throws -> String {
+public func getBlossomAuthorizationHeader(_ keys: Keys, sha256hex: String, action: BlossomUploader.Verb = .media) throws -> String {
                     
     // 5 minutes from now timestamp
     let expirationTimestamp = Int(Date().timeIntervalSince1970) + 300
