@@ -128,13 +128,14 @@ final class BlossomTests: XCTestCase {
 //        let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
         let filepath = Bundle.module.url(forResource: "beerstr", withExtension: "png")
         let imageData = try Data(contentsOf: filepath!)
-        let uploadItem = BlossomUploadItem(data: imageData, contentType: "image/png")
+        let authHeader = try getBlossomAuthorizationHeader(keys, sha256hex: imageData.sha256().hexEncodedString())
+        let uploadItem = BlossomUploadItem(data: imageData, contentType: "image/png", authorizationHeader: authHeader)
         let uploader = BlossomUploader(URL(string: "http://localhost:3000")!)
         uploader.queued = [uploadItem]
                 
         let expectation = self.expectation(description: "testMediaUpload")
         
-        uploader.uploadingPublisher(for: uploadItem, keys: keys)
+        uploader.uploadingPublisher(for: uploadItem)
             .sink(receiveCompletion: { _ in
                 expectation.fulfill()
             }, receiveValue: { uploadItem in
@@ -157,19 +158,23 @@ final class BlossomTests: XCTestCase {
 
         let filepath1 = Bundle.module.url(forResource: "upload-test", withExtension: "png")
         let imageData1 = try Data(contentsOf: filepath1!)
-        let uploadItem1 = BlossomUploadItem(data: imageData1)
+        let authHeader1 = try getBlossomAuthorizationHeader(keys, sha256hex: imageData1.sha256().hexEncodedString())
+        let uploadItem1 = BlossomUploadItem(data: imageData1, authorizationHeader: authHeader1)
         
         let filepath2 = Bundle.module.url(forResource: "bitcoin", withExtension: "png")
         let imageData2 = try Data(contentsOf: filepath2!)
-        let uploadItem2 = BlossomUploadItem(data: imageData2)
+        let authHeader2 = try getBlossomAuthorizationHeader(keys, sha256hex: imageData2.sha256().hexEncodedString())
+        let uploadItem2 = BlossomUploadItem(data: imageData2, authorizationHeader: authHeader2)
         
         let filepath3 = Bundle.module.url(forResource: "coffeechain", withExtension: "png")
         let imageData3 = try Data(contentsOf: filepath3!)
-        let uploadItem3 = BlossomUploadItem(data: imageData3)
+        let authHeader3 = try getBlossomAuthorizationHeader(keys, sha256hex: imageData3.sha256().hexEncodedString())
+        let uploadItem3 = BlossomUploadItem(data: imageData3, authorizationHeader: authHeader3)
         
         let filepath4 = Bundle.module.url(forResource: "beerstr", withExtension: "png")
         let imageData4 = try Data(contentsOf: filepath4!)
-        let uploadItem4 = BlossomUploadItem(data: imageData4)
+        let authHeader4 = try getBlossomAuthorizationHeader(keys, sha256hex: imageData4.sha256().hexEncodedString())
+        let uploadItem4 = BlossomUploadItem(data: imageData4, authorizationHeader: authHeader4)
         
         let uploader = BlossomUploader(URL(string: "http://localhost:3000")!)
         
