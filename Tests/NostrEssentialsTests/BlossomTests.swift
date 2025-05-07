@@ -203,7 +203,7 @@ final class BlossomTests: XCTestCase {
         for item in uploader.queued {
             print(item.downloadUrl ?? "?")
             print(item.dim ?? "?")
-            print(item.sha256 ?? "?")
+            print(item.sha256processed ?? "?")
         }
     }
     

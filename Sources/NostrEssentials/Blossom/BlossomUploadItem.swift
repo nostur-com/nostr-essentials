@@ -40,6 +40,10 @@ public class BlossomUploadItem: NSObject, Identifiable, ObservableObject, URLSes
                     }
                 }
                 
+                if self.sha256processed == nil {
+                    self.sha256processed = uploadResponse.sha256
+                }
+                
                 if self.downloadUrl == nil {
                     self.downloadUrl = uploadResponse.url
                     state = .success(uploadResponse.url)
