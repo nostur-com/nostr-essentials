@@ -15,6 +15,7 @@ public class BlossomUploader: NSObject, ObservableObject {
     
     private var uploadUrl: URL { server.appendingPathComponent("upload") }
     private var mediaUrl: URL { server.appendingPathComponent("media") }
+    private var mirrorUrl: URL { server.appendingPathComponent("mirror") }
     
     @Published public var queued: [BlossomUploadItem] = []
     
@@ -65,8 +66,8 @@ public class BlossomUploader: NSObject, ObservableObject {
                     return
                 }
                 
-                print("Response: \(httpResponse)")
-                print("Data: \(String(data: data, encoding: .utf8) ?? "No data")")
+//                print("Response: \(httpResponse)")
+//                print("Data: \(String(data: data, encoding: .utf8) ?? "No data")")
                 
                 switch httpResponse.statusCode {
                     case 200, 201, 202:
@@ -112,6 +113,32 @@ public class BlossomUploader: NSObject, ObservableObject {
         case upload = "upload"
         case list = "list"
         case delete = "delete"
+    }
+    
+    // Helper to test if a given server url supports image uploading
+    public func mirrorUpload(uploadItem: BlossomUploadItem, authorizationHeader: String? = nil) async throws -> Bool {
+        guard let downloadUrl = uploadItem.downloadUrl else { return false }
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
+            
+        var request = URLRequest(url: mirrorUrl)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(authorizationHeader ?? uploadItem.authorizationHeader, forHTTPHeaderField: "Authorization")
+        
+        let body = "{\"url\": \"\(downloadUrl)\"}"
+        request.httpBody = body.data(using: .utf8)
+
+        // set content length to body.count
+        request.setValue("\(body.count)", forHTTPHeaderField: "Content-Length")
+
+        let (data, response) = try await session.data(for: request)
+        if let response = response as? HTTPURLResponse {
+//            print("Response: \(response)")
+//            print("Data: \(String(data: data, encoding: .utf8) ?? "No data")")
+            return response.statusCode == 200
+        }
+        return false
     }
 }
 
