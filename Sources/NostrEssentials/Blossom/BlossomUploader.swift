@@ -51,7 +51,6 @@ public class BlossomUploader: NSObject, ObservableObject {
             request.setValue(contentType, forHTTPHeaderField: "Content-Type")
         }
         request.setValue(uploadItem.authorizationHeader, forHTTPHeaderField: "Authorization")
-        request.setValue("\(uploadItem.mediaData.count)", forHTTPHeaderField: "Content-Length")
         request.setValue("\(uploadItem.sha256)", forHTTPHeaderField:  "X-SHA-256")
         request.httpBody = uploadItem.mediaData
         
