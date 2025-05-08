@@ -92,7 +92,7 @@ final class BlossomTests: XCTestCase {
             kind: 24242,
             tags: [
                 Tag(["t", "upload"]),
-                Tag(["x", "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"]),
+                Tag(["x", "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"]), // happy4u.jpg
                 Tag(["expiration", "1808858680"]),
             ]
         )

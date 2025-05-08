@@ -148,7 +148,7 @@ public class BlossomUploader: NSObject, ObservableObject {
 public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool {
     let mediaUrl = serverURL.appendingPathComponent("media")
     let testHash = "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"
-    let authorization = (try? getBlossomAuthorizationHeader(keys, sha256hex: testHash, action: .media)) ?? ""
+    let authorization = (try? getBlossomAuthorizationHeader(keys, sha256hex: testHash, action: .upload)) ?? ""
             
     let config = URLSessionConfiguration.default
     config.requestCachePolicy = .reloadIgnoringLocalCacheData // Disable cache
