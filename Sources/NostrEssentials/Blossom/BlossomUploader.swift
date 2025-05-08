@@ -166,7 +166,7 @@ public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool
     return (response as? HTTPURLResponse)?.statusCode == 200
 }
 
-public func getBlossomAuthorizationHeader(_ keys: Keys, sha256hex: String, action: BlossomUploader.Verb = .media) throws -> String {
+public func getBlossomAuthorizationHeader(_ keys: Keys, sha256hex: String, action: BlossomUploader.Verb = .upload) throws -> String {
                     
     // 5 minutes from now timestamp
     let expirationTimestamp = Int(Date().timeIntervalSince1970) + 300
