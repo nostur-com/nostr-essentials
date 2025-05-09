@@ -116,7 +116,7 @@ public class BlossomUploader: NSObject, ObservableObject {
         case delete = "delete"
     }
     
-    // Helper to test if a given server url supports image uploading
+    // Ask server to download (mirror) the file from some url
     public func mirrorUpload(uploadItem: BlossomUploadItem, authorizationHeader: String? = nil) async throws -> Bool {
         guard let downloadUrl = uploadItem.downloadUrl else { return false }
         let config = URLSessionConfiguration.default
