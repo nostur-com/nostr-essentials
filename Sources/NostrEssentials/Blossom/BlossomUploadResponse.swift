@@ -1,8 +1,8 @@
 //
-//  UploadResponse.swift
+//  BlossomUploadResponse.swift
 //
 //
-//  Created by Fabian Lachman on 20/10/2023.
+//  Created by Fabian Lachman on 05/05/2025.
 //
 
 import Foundation
@@ -14,5 +14,5 @@ public struct BlossomUploadResponse: Decodable {
     public var type: String?
     public let url: String
     
-    public var nip94: Nip94Event?
+    public var nip94: [Tag]?
 }

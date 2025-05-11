@@ -26,15 +26,15 @@ public class BlossomUploadItem: NSObject, Identifiable, ObservableObject, URLSes
             self.objectWillChange.send()
             if let uploadResponse = uploadResponse {
                 if let nip94 = uploadResponse.nip94 {
-                    if let dim = nip94.tags.first(where: { $0.type == "dim"} )?.value, dim != "0x0" && dim != "" {
+                    if let dim = nip94.first(where: { $0.type == "dim"} )?.value, dim != "0x0" && dim != "" {
                         self.dim = dim
                     }
                     
-                    if let hash = nip94.tags.first(where: { $0.type == "x"} )?.value, hash != "" {
+                    if let hash = nip94.first(where: { $0.type == "x"} )?.value, hash != "" {
                         self.sha256processed = hash
                     }
                     
-                    if let url = nip94.tags.first(where: { $0.type == "url"} )?.value, !url.isEmpty {
+                    if let url = nip94.first(where: { $0.type == "url"} )?.value, !url.isEmpty {
                         self.downloadUrl = url
                         state = .success(url)
                     }
