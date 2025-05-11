@@ -42,7 +42,8 @@ let package = Package(
                 .copy("Resources/beerstr.png"),
                 .copy("Resources/bitcoin.png"),
                 .copy("Resources/10mb.jpg"),
-                .copy("Resources/30mb.jpg")
+                .copy("Resources/30mb.jpg"),
+                .copy("Resources/48af54ea036b2b5a6d64142286eee45e862c2091740959be5d2af0872618593e.jpg")
             ]
         )
     ]

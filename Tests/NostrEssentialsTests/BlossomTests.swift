@@ -124,8 +124,6 @@ final class BlossomTests: XCTestCase {
         // pubkey: 1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448
         // npub: npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7
         
-//        let filepath = Bundle.module.url(forResource: "nostur-add-nsecbunker", withExtension: "mov")
-//        let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
         let filepath = Bundle.module.url(forResource: "beerstr", withExtension: "png")
         let imageData = try Data(contentsOf: filepath!)
         let authHeader = try getBlossomAuthorizationHeader(keys, sha256hex: imageData.sha256().hexEncodedString())
@@ -211,6 +209,28 @@ final class BlossomTests: XCTestCase {
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
         
         let testSuccess = try await testBlossomServer(URL(string: "http://localhost:3000")!, keys: keys)
+        
+        XCTAssertTrue(testSuccess)
+    }
+    
+    func testBlossomMirror() async throws {
+        let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+        
+        let filepath = Bundle.module.url(forResource: "48af54ea036b2b5a6d64142286eee45e862c2091740959be5d2af0872618593e", withExtension: "jpg")
+        let imageData = try Data(contentsOf: filepath!)
+        let authHeader = try getBlossomAuthorizationHeader(keys, sha256hex: imageData.sha256().hexEncodedString())
+        let mirrorUploader = BlossomUploader(URL(string: "https://media.utxo.nl")!)
+        
+        let uploadItem = BlossomUploadItem(data: imageData, index: 0, contentType: "image/jpg", authorizationHeader: authHeader)
+        uploadItem.downloadUrl = "https://image.nostr.build/48af54ea036b2b5a6d64142286eee45e862c2091740959be5d2af0872618593e.jpg"
+        uploadItem.sha256processed = "48af54ea036b2b5a6d64142286eee45e862c2091740959be5d2af0872618593e"
+        
+        guard let sha256processed = uploadItem.sha256processed else { return }
+        guard let authHeader = try? getBlossomAuthorizationHeader(keys, sha256hex: sha256processed, action: .upload) else {
+            return
+        }
+        
+        let testSuccess = try await mirrorUploader.mirrorUpload(uploadItem: uploadItem, authorizationHeader: authHeader)
         
         XCTAssertTrue(testSuccess)
     }
