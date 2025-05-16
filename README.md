@@ -17,6 +17,7 @@ As of August 15th 2023, this project has just started, it will eventually:
 - Common nostr related regexes 
 - Content Parsing
 - Media uploading to NIP-96 compatible servers (NIP-96)
+- Media uploading using Blossom: (PUT /media and PUT /mirror)
 - HTTP Auth (NIP-98)
 - Connecting to relays, sending/receiving
 - Parse relay messages
@@ -329,6 +330,34 @@ var request = URLRequest(url: "https://some.server.address/auth")
 request.setValue(authorization, forHTTPHeaderField: "Authorization")
 
 // Continue other regular URLRequest stuff
+```
+
+## Media uploading (Blossom)
+```swift
+import NostrEssentials
+import Combine
+
+var subscriptions: Set<AnyCancellable> = []
+let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+
+let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
+let imageData = try Data(contentsOf: filepath!)
+let authHeader = try getBlossomAuthorizationHeader(keys, sha256hex: imageData.sha256().hexEncodedString())
+let uploadItem = BlossomUploadItem(data: imageData, contentType: "image/png", authorizationHeader: authHeader)
+let uploader = BlossomUploader(URL(string: "http://localhost:3000")!)
+uploader.queued = [uploadItem]
+
+uploader.uploadingPublisher(for: uploadItem)
+    .sink(
+        receiveCompletion: { _ in 
+        }, 
+        receiveValue: { mediaRequestBag in
+            uploader.processResponse(uploadItem: uploadItem)
+        }
+    )
+    .store(in: &subscriptions)
+
+// Multiple simultaneous uploads, delete and mirroring is also supported, see Tests for examples.
 ```
 
 ## Media uploading (NIP-96)
