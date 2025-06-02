@@ -30,9 +30,7 @@ public class Nip96Uploader: NSObject, ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
     public var onFinish: (() -> Void)? = nil
     
-    public func uploadingPublisher(for mediaRequestBag: MediaRequestBag, keys: Keys) -> AnyPublisher<MediaRequestBag, Error> {
-        let authorization = (try? Self.getAuthorizationHeader(keys, apiUrl: mediaRequestBag.apiUrl, method: mediaRequestBag.method, sha256hex: mediaRequestBag.sha256hex)) ?? ""
-            
+    public func uploadingPublisher(for mediaRequestBag: MediaRequestBag) -> AnyPublisher<MediaRequestBag, Error> {
         let config = URLSessionConfiguration.default
         let session = URLSession(configuration: config, delegate: mediaRequestBag, delegateQueue: nil)
         
@@ -40,7 +38,7 @@ public class Nip96Uploader: NSObject, ObservableObject {
         request.httpMethod = "POST"
         let contentType = "multipart/form-data; boundary=\(mediaRequestBag.boundary)"
         request.setValue(contentType, forHTTPHeaderField: "Content-Type")
-        request.setValue(authorization, forHTTPHeaderField: "Authorization")
+        request.setValue(mediaRequestBag.authorizationHeader, forHTTPHeaderField: "Authorization")
         request.setValue("\(mediaRequestBag.httpBody.count)", forHTTPHeaderField: "Content-Length")
         request.httpBody = mediaRequestBag.httpBody
         
@@ -144,8 +142,8 @@ public class Nip96Uploader: NSObject, ObservableObject {
         }
     }
     
-    public func uploadingPublishers(for multipleMediaRequestBag: [MediaRequestBag], keys: Keys) -> AnyPublisher<[MediaRequestBag], Error> {
-        let uploadingPublishers = multipleMediaRequestBag.map { uploadingPublisher(for: $0, keys: keys) }
+    public func uploadingPublishers(for multipleMediaRequestBag: [MediaRequestBag]) -> AnyPublisher<[MediaRequestBag], Error> {
+        let uploadingPublishers = multipleMediaRequestBag.map { uploadingPublisher(for: $0) }
         return Publishers.MergeMany(uploadingPublishers)
             .collect()
             .eraseToAnyPublisher()

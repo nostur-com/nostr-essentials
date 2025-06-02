@@ -24,6 +24,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
     public var sha256file: String // hash of file
     public var boundary: String
     public var contentLength: Int
+    public var authorizationHeader: String
     
     public var uploadResponse: UploadResponse? {
         didSet {
@@ -72,13 +73,14 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
     private let mediaData: Data
     public let index: Int
     
-    public init(apiUrl: URL, method: String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0) {
+    public init(apiUrl: URL, method: String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0, authorizationHeader: String) {
         self.apiUrl = apiUrl
         self.method = method
         self.uploadtype = uploadtype
         self.filename = filename
         self.mediaData = mediaData
         self.index = index
+        self.authorizationHeader = authorizationHeader
         
         let body = NSMutableData()
         
