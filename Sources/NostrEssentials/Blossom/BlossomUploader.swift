@@ -101,7 +101,7 @@ public class BlossomUploader: NSObject, ObservableObject {
         }
     }
     
-    public func uploadingPublishers(for uploadItems: [BlossomUploadItem], keys: Keys) -> AnyPublisher<[BlossomUploadItem], Error> {
+    public func uploadingPublishers(for uploadItems: [BlossomUploadItem]) -> AnyPublisher<[BlossomUploadItem], Error> {
         let uploadingPublishers = uploadItems.map { uploadingPublisher(for: $0) }
         return Publishers.MergeMany(uploadingPublishers)
             .collect()

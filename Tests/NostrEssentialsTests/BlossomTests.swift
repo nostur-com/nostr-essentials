@@ -180,7 +180,7 @@ final class BlossomTests: XCTestCase {
         
         let uploadItems = [uploadItem1, uploadItem2, uploadItem3, uploadItem4]
         uploader.queued = uploadItems
-        uploader.uploadingPublishers(for: uploadItems, keys: keys)
+        uploader.uploadingPublishers(for: uploadItems)
             .sink(receiveCompletion: { _ in
                 expectation.fulfill()
             }, receiveValue: { uploadItems in
