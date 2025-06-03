@@ -73,7 +73,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
     private let mediaData: Data
     public let index: Int
     
-    public init(apiUrl: URL, method: String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0, authorizationHeader: String) {
+    public init(apiUrl: URL, method: String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0, authorizationHeader: String, boundary: String) {
         self.apiUrl = apiUrl
         self.method = method
         self.uploadtype = uploadtype
@@ -81,40 +81,10 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         self.mediaData = mediaData
         self.index = index
         self.authorizationHeader = authorizationHeader
-        
-        let body = NSMutableData()
-        
-        let contentType = switch filename.suffix(4) {
-        case ".3gp":
-            "video/3gpp"
-        case ".mov":
-            "video/quicktime"
-        case ".ogg":
-            "video/ogg"
-        case ".webm":
-            "video/webm"
-        case ".png":
-            "image/png"
-        case ".mp4":
-            "video/mp4"
-        default:
-            "image/jpeg"
-        }
-        
-        let boundary = UUID().uuidString
+              
+        let contentType = contentType(for: filename)
         self.boundary = boundary
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"mediafile\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
-        body.append(mediaData)
-        
-        body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"uploadtype\"\r\n\r\n".data(using: .utf8)!)
-        body.append(uploadtype.data(using: .utf8)!)
-        
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        self.httpBody = body as Data
+        self.httpBody = makeHttpBody(mediaData: mediaData, contentType: contentType, filename: filename, uploadtype: uploadtype, boundary: boundary)
         self.sha256file = mediaData.sha256().hexEncodedString()
         self.sha256hex = httpBody.sha256().hexEncodedString()
         let contentLength = self.httpBody.count
@@ -139,5 +109,43 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
     
     public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
         progressSubject.send(Float(totalBytesSent))
+    }
+}
+
+
+public func makeHttpBody(mediaData: Data, contentType: String, filename: String = "media.png",  uploadtype: String = "media", boundary: String) -> Data {
+   
+    let body = NSMutableData()
+    
+    body.append("--\(boundary)\r\n".data(using: .utf8)!)
+    body.append("Content-Disposition: form-data; name=\"mediafile\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+    body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
+    body.append(mediaData)
+    
+    body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
+    body.append("Content-Disposition: form-data; name=\"uploadtype\"\r\n\r\n".data(using: .utf8)!)
+    body.append(uploadtype.data(using: .utf8)!)
+    
+    body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+    
+    return (body as Data)
+}
+
+public func contentType(for filename: String) -> String {
+    return switch filename.suffix(4) {
+    case ".3gp":
+        "video/3gpp"
+    case ".mov":
+        "video/quicktime"
+    case ".ogg":
+        "video/ogg"
+    case ".webm":
+        "video/webm"
+    case ".png":
+        "image/png"
+    case ".mp4":
+        "video/mp4"
+    default:
+        "image/jpeg"
     }
 }

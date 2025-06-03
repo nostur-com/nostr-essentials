@@ -39,18 +39,33 @@ final class Nip96Tests: XCTestCase {
         // npub: npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7
         
 //        let filepath = Bundle.module.url(forResource: "nostur-add-nsecbunker", withExtension: "mov")
-//        let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
-        let filepath = Bundle.module.url(forResource: "beerstr", withExtension: "png")
+        let filepath = Bundle.module.url(forResource: "upload-test", withExtension: "png")
+//        let filepath = Bundle.module.url(forResource: "30mb", withExtension: "jpg")
         let imageData = try Data(contentsOf: filepath!)
-        let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "http://localhost:8080/wp-json/nostrmedia/v1/upload/")!, mediaData: imageData)
-//        let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "https://media.utxo.nl/wp-json/nostrmedia/v1/upload/")!, mediaData: imageData)
-//        let mediaRequestBag = MediaRequestBag(apiUrl: URL(string: "https://nostrcheck.me/api/v2/media")!, mediaData: imageData)
+        
+        
+        let apiUrl = URL(string: "http://localhost:8080/wp-json/nostrmedia/v1/upload/")!
+//        let apiUrl = URL(string: "https://media.utxo.nl/wp-json/nostrmedia/v1/upload/")!
+//        let apiUrl = URL(string: "https://nostrcheck.me/api/v2/media")!
+        
+        // Need http body to calculate hash
+        let boundary = UUID().uuidString
+        let body = makeHttpBody(mediaData: imageData, contentType: "image/png", filename: "upload-test.png", uploadtype: "media", boundary: boundary)
+        
+        let sha256hex = body.sha256().hexEncodedString()
+        
+        let authorizationHeader = try Nip96Uploader.getAuthorizationHeader(keys, apiUrl: apiUrl, method: "POST", sha256hex: sha256hex)
+        
+        let mediaRequestBag = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData, authorizationHeader: authorizationHeader, boundary: boundary)
         let uploader = Nip96Uploader()
+        
+        
+        
         uploader.queued = [mediaRequestBag]
                 
         let expectation = self.expectation(description: "testMediaUpload")
         
-        uploader.uploadingPublisher(for: mediaRequestBag, keys: keys)
+        uploader.uploadingPublisher(for: mediaRequestBag)
             .sink(receiveCompletion: { _ in
                 expectation.fulfill()
             }, receiveValue: { mediaRequestBag in
@@ -83,22 +98,48 @@ final class Nip96Tests: XCTestCase {
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
 //        let apiUrl = URL(string: "https://nostrcheck.me/api/v2/media")!
         let apiUrl = URL(string: "http://localhost:8080/wp-json/nostrmedia/v1/upload/")!
+        let boundary = UUID().uuidString
 //        let filepath = Bundle.module.url(forResource: "nostur-add-nsecbunker", withExtension: "mov")
         let filepath1 = Bundle.module.url(forResource: "upload-test", withExtension: "png")
         let imageData1 = try Data(contentsOf: filepath1!)
-        let mediaRequestBag1 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData1)
+        
+        
+        // Need http body to calculate hash
+        let body1 = makeHttpBody(mediaData: imageData1, contentType: "image/png", filename: "upload-test.png", uploadtype: "media", boundary: boundary)
+        
+        let authorizationHeader = try Nip96Uploader.getAuthorizationHeader(keys, apiUrl: apiUrl, method: "POST", sha256hex: body1.sha256().hexEncodedString())
+        
+        let mediaRequestBag1 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData1, authorizationHeader: authorizationHeader, boundary: boundary)
         
         let filepath2 = Bundle.module.url(forResource: "bitcoin", withExtension: "png")
         let imageData2 = try Data(contentsOf: filepath2!)
-        let mediaRequestBag2 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData2)
+        
+        // Need http body to calculate hash
+        let body2 = makeHttpBody(mediaData: imageData1, contentType: "image/png", filename: "bitcoin.png", uploadtype: "media", boundary: boundary)
+        
+        let authorizationHeader2 = try Nip96Uploader.getAuthorizationHeader(keys, apiUrl: apiUrl, method: "POST", sha256hex: body2.sha256().hexEncodedString())
+        
+        let mediaRequestBag2 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData2, authorizationHeader: authorizationHeader2, boundary: boundary)
         
         let filepath3 = Bundle.module.url(forResource: "coffeechain", withExtension: "png")
         let imageData3 = try Data(contentsOf: filepath3!)
-        let mediaRequestBag3 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData3)
+        
+        // Need http body to calculate hash
+        let body3 = makeHttpBody(mediaData: imageData3, contentType: "image/png", filename: "coffeechain.png", uploadtype: "media", boundary: boundary)
+        
+        let authorizationHeader3 = try Nip96Uploader.getAuthorizationHeader(keys, apiUrl: apiUrl, method: "POST", sha256hex: body3.sha256().hexEncodedString())
+        
+        let mediaRequestBag3 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData3, authorizationHeader: authorizationHeader3, boundary: boundary)
         
         let filepath4 = Bundle.module.url(forResource: "beerstr", withExtension: "png")
         let imageData4 = try Data(contentsOf: filepath4!)
-        let mediaRequestBag4 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData4)
+        
+        // Need http body to calculate hash
+        let body4 = makeHttpBody(mediaData: imageData4, contentType: "image/png", filename: "beerstr.png", uploadtype: "media", boundary: boundary)
+        
+        let authorizationHeader4 = try Nip96Uploader.getAuthorizationHeader(keys, apiUrl: apiUrl, method: "POST", sha256hex: body4.sha256().hexEncodedString())
+        
+        let mediaRequestBag4 = MediaRequestBag(apiUrl: apiUrl, mediaData: imageData4, authorizationHeader: authorizationHeader4, boundary: boundary)
         
         let uploader = Nip96Uploader()
         
@@ -106,7 +147,7 @@ final class Nip96Tests: XCTestCase {
         
         let mediaRequestBags = [mediaRequestBag1, mediaRequestBag2, mediaRequestBag3, mediaRequestBag4]
         uploader.queued = mediaRequestBags
-        uploader.uploadingPublishers(for: mediaRequestBags, keys: keys)
+        uploader.uploadingPublishers(for: mediaRequestBags)
             .sink(receiveCompletion: { _ in
                 expectation.fulfill()
             }, receiveValue: { mediaRequestBags in
