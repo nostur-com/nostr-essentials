@@ -57,6 +57,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
     @Published public var state: UploadState = .initializing
     @Published public var downloadUrl: String?
     public var dim: String? // "640x480" dimensions of processed image in imeta format  (DIP-01)
+    public var blurhash: String?
     public var sha256: String? // hash of processed image
     
     public var finished: Bool { // helper because we can't do == on enum with param
@@ -73,7 +74,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
     private let mediaData: Data
     public let index: Int
     
-    public init(apiUrl: URL, method: String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0, authorizationHeader: String, boundary: String) {
+    public init(apiUrl: URL, method: String = "POST", uploadtype: String = "media", filename: String = "media.png", mediaData: Data, index: Int = 0, authorizationHeader: String, boundary: String, blurhash: String? = nil) {
         self.apiUrl = apiUrl
         self.method = method
         self.uploadtype = uploadtype
@@ -81,6 +82,7 @@ public class MediaRequestBag: NSObject, Identifiable, ObservableObject, URLSessi
         self.mediaData = mediaData
         self.index = index
         self.authorizationHeader = authorizationHeader
+        self.blurhash = blurhash
               
         let contentType = contentType(for: filename)
         self.boundary = boundary
