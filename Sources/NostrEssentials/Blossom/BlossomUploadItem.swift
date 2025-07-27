@@ -100,6 +100,13 @@ public class BlossomUploadItem: NSObject, Identifiable, ObservableObject, URLSes
     private var progressSubject = PassthroughSubject<Float, Never>()
     private var subscriptions = Set<AnyCancellable>()
     
+    public var verb: BlossomUploader.Verb {
+        if let contentType, contentType == "audio/mp4" {
+            return BlossomUploader.Verb.upload
+        }
+        return BlossomUploader.Verb.media
+    }
+    
     public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
         progressSubject.send(Float(totalBytesSent))
     }

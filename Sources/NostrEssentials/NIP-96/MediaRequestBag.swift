@@ -147,6 +147,8 @@ public func contentType(for filename: String) -> String {
         "image/png"
     case ".mp4":
         "video/mp4"
+    case ".m4a":
+        "audio/mp4"
     default:
         "image/jpeg"
     }

@@ -39,13 +39,13 @@ public class BlossomUploader: NSObject, ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
     public var onFinish: (() -> Void)? = nil
     
-    public func uploadingPublisher(for uploadItem: BlossomUploadItem) -> AnyPublisher<BlossomUploadItem, Error> {
+    public func uploadingPublisher(for uploadItem: BlossomUploadItem, type: Verb = .media) -> AnyPublisher<BlossomUploadItem, Error> {
         
             
         let config = URLSessionConfiguration.default
         let session = URLSession(configuration: config, delegate: uploadItem, delegateQueue: nil)
         
-        var request = URLRequest(url: mediaUrl)
+        var request = URLRequest(url: uploadItem.verb == .media ? mediaUrl : uploadUrl)
         request.httpMethod = "PUT"
         if let contentType = uploadItem.contentType {
             request.setValue(contentType, forHTTPHeaderField: "Content-Type")
