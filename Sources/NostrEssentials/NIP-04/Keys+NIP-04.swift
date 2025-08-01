@@ -47,7 +47,7 @@ extension Keys {
             return nil
         }
         
-        let utf8Content = Data(content.utf8).bytes
+        let utf8Content = [UInt8](Data(content.utf8))
         var random = Data(count: 16)
         random.withUnsafeMutableBytes { (rawMutableBufferPointer) in
             let bufferPointer = rawMutableBufferPointer.bindMemory(to: UInt8.self)
@@ -56,23 +56,26 @@ extension Keys {
             }
         }
         
-        let iv = random.bytes
+        let iv = [UInt8](random) 
         
         guard let encryptedContent = aes_encrypt(data: utf8Content, iv: iv, shared_sec: sharedSecret) else {
             return nil
         }
         
-        return encode_dm_base64(content: encryptedContent.bytes, iv: iv)
+        return encode_dm_base64(content: [UInt8](encryptedContent), iv: iv)
         
     }
 
     static func get_shared_secret(privkey: String, pubkey: String) -> [UInt8]? {
-        guard let privkey_bytes = try? privkey.bytes else {
+        let privkey_bytes = privkey.hexToBytes()
+        guard !privkey_bytes.isEmpty else {
             return nil
         }
-        guard var pk_bytes = try? pubkey.bytes else {
+        let pk_bytes_temp = pubkey.hexToBytes()
+        guard !pk_bytes_temp.isEmpty else {
             return nil
         }
+        var pk_bytes = pk_bytes_temp
         pk_bytes.insert(2, at: 0)
         
         var publicKey = secp256k1_pubkey()
@@ -148,7 +151,7 @@ extension Keys {
         guard let dat = Data(base64Encoded: content) else {
             return nil
         }
-        return dat.bytes
+        return [UInt8](dat)
     }
 
     static func aes_decrypt(data: [UInt8], iv: [UInt8], shared_sec: [UInt8]) -> Data? {
