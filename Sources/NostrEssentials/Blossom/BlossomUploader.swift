@@ -39,7 +39,7 @@ public class BlossomUploader: NSObject, ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
     public var onFinish: (() -> Void)? = nil
     
-    public func uploadingPublisher(for uploadItem: BlossomUploadItem, type: Verb = .media) -> AnyPublisher<BlossomUploadItem, Error> {
+    public func uploadingPublisher(for uploadItem: BlossomUploadItem) -> AnyPublisher<BlossomUploadItem, Error> {
         
             
         let config = URLSessionConfiguration.default
@@ -81,7 +81,7 @@ public class BlossomUploader: NSObject, ObservableObject {
                         } catch {
                             promise(.failure(error))
                         }
-                    case 401:
+                    case 401, 403:
                         promise(.failure(URLError(.userAuthenticationRequired)))
                     default:
                         promise(.failure(URLError(.badServerResponse)))
@@ -144,10 +144,9 @@ public class BlossomUploader: NSObject, ObservableObject {
 }
 
 
-// Helper to test if a given server url supports image uploading
-public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool {
-    let mediaUrl = serverURL.appendingPathComponent("media")
-    let testHash = "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"
+// Helper to test if a given server url supports uploading
+public func testBlossomServer(_ serverURL: URL, testHash: String? = nil, keys: Keys) async throws -> SupportedBlossomType {
+    let testHash = testHash ?? "08718084031ef9b9ec91e1aee5b6116db025fba6946534911d720f714a98b961"
     let authorization = (try? getBlossomAuthorizationHeader(keys, sha256hex: testHash, action: .upload)) ?? ""
             
     let config = URLSessionConfiguration.default
@@ -155,15 +154,94 @@ public func testBlossomServer(_ serverURL: URL, keys: Keys) async throws -> Bool
     config.urlCache = nil // Ensure no caching
     let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
         
-    var request = URLRequest(url: mediaUrl)
-    request.httpMethod = "HEAD"
-    request.setValue("image/png", forHTTPHeaderField: "X-Content-Type")
-    request.setValue(authorization, forHTTPHeaderField: "Authorization")
-    request.setValue("184292", forHTTPHeaderField: "X-Content-Length")
-    request.setValue(testHash, forHTTPHeaderField: "X-SHA-256")
+    // First try /media endpoint
+    var mediaRequest = URLRequest(url: serverURL.appendingPathComponent("media"))
+    mediaRequest.httpMethod = "HEAD"
+    mediaRequest.setValue("image/png", forHTTPHeaderField: "X-Content-Type")
+    mediaRequest.setValue(authorization, forHTTPHeaderField: "Authorization")
+    mediaRequest.setValue("184292", forHTTPHeaderField: "X-Content-Length")
+    mediaRequest.setValue(testHash, forHTTPHeaderField: "X-SHA-256")
 
-    let (_, response) = try await session.data(for: request)
-    return (response as? HTTPURLResponse)?.statusCode == 200
+    let (_, responseMedia) = try await session.data(for: mediaRequest)
+    
+    if (responseMedia as? HTTPURLResponse)?.statusCode == 200 {
+        return .media
+    }
+        
+    // Try /upload endpoint
+    var uploadRequest = URLRequest(url: serverURL.appendingPathComponent("upload"))
+    uploadRequest.httpMethod = "HEAD"
+    uploadRequest.setValue("image/png", forHTTPHeaderField: "X-Content-Type")
+    uploadRequest.setValue(authorization, forHTTPHeaderField: "Authorization")
+    uploadRequest.setValue("184292", forHTTPHeaderField: "X-Content-Length")
+    uploadRequest.setValue(testHash, forHTTPHeaderField: "X-SHA-256")
+    
+    let (_, responseUpload) = try await session.data(for: uploadRequest)
+    
+    if (responseUpload as? HTTPURLResponse)?.statusCode == 200 {
+        return .upload
+    }
+    
+    if (responseUpload as? HTTPURLResponse)?.statusCode == 401 || (responseUpload as? HTTPURLResponse)?.statusCode == 403 {
+        return .unauthorized
+    }
+    
+    if (responseMedia as? HTTPURLResponse)?.statusCode == 401 || (responseMedia as? HTTPURLResponse)?.statusCode == 403 {
+        return .unauthorized
+    }
+    
+    return .none
+}
+
+// Helper to test if a given server url supports uploading
+public func testBlossomServer(_ serverURL: URL, authorization: String) async throws -> SupportedBlossomType {
+    let config = URLSessionConfiguration.default
+    config.requestCachePolicy = .reloadIgnoringLocalCacheData // Disable cache
+    config.urlCache = nil // Ensure no caching
+    let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
+        
+    // First try /media endpoint
+    var mediaRequest = URLRequest(url: serverURL.appendingPathComponent("media"))
+    mediaRequest.httpMethod = "HEAD"
+    mediaRequest.setValue("image/png", forHTTPHeaderField: "X-Content-Type")
+    mediaRequest.setValue(authorization, forHTTPHeaderField: "Authorization")
+    mediaRequest.setValue("184292", forHTTPHeaderField: "X-Content-Length")
+
+    let (_, responseMedia) = try await session.data(for: mediaRequest)
+    
+    if (responseMedia as? HTTPURLResponse)?.statusCode == 200 {
+        return .media
+    }
+        
+    // Try /upload endpoint
+    var uploadRequest = URLRequest(url: serverURL.appendingPathComponent("upload"))
+    uploadRequest.httpMethod = "HEAD"
+    uploadRequest.setValue("image/png", forHTTPHeaderField: "X-Content-Type")
+    uploadRequest.setValue(authorization, forHTTPHeaderField: "Authorization")
+    uploadRequest.setValue("184292", forHTTPHeaderField: "X-Content-Length")
+    
+    let (_, responseUpload) = try await session.data(for: uploadRequest)
+    
+    if (responseUpload as? HTTPURLResponse)?.statusCode == 200 {
+        return .upload
+    }
+    
+    if (responseUpload as? HTTPURLResponse)?.statusCode == 401 || (responseUpload as? HTTPURLResponse)?.statusCode == 403 {
+        return .unauthorized
+    }
+    
+    if (responseMedia as? HTTPURLResponse)?.statusCode == 401 || (responseMedia as? HTTPURLResponse)?.statusCode == 403 {
+        return .unauthorized
+    }
+    
+    return .none
+}
+
+public enum SupportedBlossomType {
+    case media
+    case upload
+    case unauthorized
+    case none
 }
 
 public func getBlossomAuthorizationHeader(_ keys: Keys, sha256hex: String, action: BlossomUploader.Verb = .upload) throws -> String {

@@ -72,7 +72,8 @@ public class BlossomUploadItem: NSObject, Identifiable, ObservableObject, URLSes
     public let mediaData: Data
     public let index: Int
     
-    public init(data: Data, index: Int = 0, contentType: String? = nil, authorizationHeader: String, blurhash: String? = nil) {
+    public init(data: Data, index: Int = 0, contentType: String? = nil, authorizationHeader: String, blurhash: String? = nil, verb: BlossomUploader.Verb? = nil) {
+        self._verb = verb
         self.index = index
         self.sha256 = data.sha256().hexEncodedString()
         let contentLength = data.count
@@ -100,7 +101,14 @@ public class BlossomUploadItem: NSObject, Identifiable, ObservableObject, URLSes
     private var progressSubject = PassthroughSubject<Float, Never>()
     private var subscriptions = Set<AnyCancellable>()
     
+    private var _verb: BlossomUploader.Verb? = nil
+    
     public var verb: BlossomUploader.Verb {
+        if let _verb { // force verb if set (endpoint /upload or /media)
+            return _verb
+        }
+        
+        // /upload for video, else /media
         if let contentType, contentType == "audio/mp4" {
             return BlossomUploader.Verb.upload
         }

@@ -45,6 +45,35 @@ final class BlossomTests: XCTestCase {
         
     }
     
+    func testSignDeleteAuthorizationEvent() throws {
+        let keys = try Keys(privateKeyHex: "6ca44d4bc72db0b864afc984bb61cfc99ea9b6c50dcebac578e6022e44f8104f")
+        
+        var unsignedEvent = Event(
+            pubkey: "54cff7c81ba9575e63a57fd88e564a67c3fe8c4841b1e99a40db5745a6e80992",
+            content: "Delete 9895e5ba2ee330f9bed3655dfcb072a78658e40631c5aa8a6a41d3435579bc1d",
+            kind: 24242,
+            tags: [
+                Tag(["t", "delete"]),
+                Tag(["x", "9895e5ba2ee330f9bed3655dfcb072a78658e40631c5aa8a6a41d3435579bc1d"]),
+                Tag(["expiration", "1808858680"]),
+            ]
+        )
+        
+        let signedEvent = try unsignedEvent.sign(keys)
+        XCTAssertEqual(signedEvent.pubkey, "54cff7c81ba9575e63a57fd88e564a67c3fe8c4841b1e99a40db5745a6e80992")
+        
+        XCTAssertEqual(signedEvent.kind, 24242)
+        XCTAssertEqual(signedEvent.tags[0].type, "t")
+        XCTAssertEqual(signedEvent.tags[0].value, "delete")
+        XCTAssertEqual(signedEvent.content, "Delete 9895e5ba2ee330f9bed3655dfcb072a78658e40631c5aa8a6a41d3435579bc1d")
+        
+
+        XCTAssertEqual(try signedEvent.verified(), true)
+        print(NSString(string:signedEvent.json()!))
+        print(NSString(string:signedEvent.base64()!))
+        
+    }
+    
     func testSignUploadAuthorizationEvent() throws {
          
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
@@ -119,6 +148,7 @@ final class BlossomTests: XCTestCase {
         
     }
     
+    // force /media endpoint
     func testBlossomMediaUpload() throws {
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
         // pubkey: 1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448
@@ -128,7 +158,7 @@ final class BlossomTests: XCTestCase {
         let imageData = try Data(contentsOf: filepath!)
         let authHeader = try getBlossomAuthorizationHeader(keys, sha256hex: imageData.sha256().hexEncodedString())
         let uploadItem = BlossomUploadItem(data: imageData, contentType: "image/png", authorizationHeader: authHeader)
-        let uploader = BlossomUploader(URL(string: "http://localhost:3000")!)
+        let uploader = BlossomUploader(URL(string: "http://localhost:3355")!)
         uploader.queued = [uploadItem]
                 
         let expectation = self.expectation(description: "testMediaUpload")
@@ -149,10 +179,40 @@ final class BlossomTests: XCTestCase {
         print(uploader.queued.first?.downloadUrl ?? "?")
     }
     
+    // force /upload endpoint
+    func testBlossomUploadUpload() throws {
+        let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
+        // pubkey: 1be899d4b3479a5a3fef5fb55bf3c2d7f5aabbf81f4d13c523afa760462cd448
+        // npub: npub1r05fn49ng7d950l0t764hu7z6l664wlcrax383fr47nkq33v63yqg63cu7
+        
+        let filepath = Bundle.module.url(forResource: "beerstr", withExtension: "png")
+        let imageData = try Data(contentsOf: filepath!)
+        let authHeader = try getBlossomAuthorizationHeader(keys, sha256hex: imageData.sha256().hexEncodedString())
+        let uploadItem = BlossomUploadItem(data: imageData, contentType: "image/png", authorizationHeader: authHeader, verb: .upload)
+        let uploader = BlossomUploader(URL(string: "http://localhost:3355")!)
+        uploader.queued = [uploadItem]
+                
+        let expectation = self.expectation(description: "testMediaUpload")
+        
+        uploader.uploadingPublisher(for: uploadItem)
+            .sink(receiveCompletion: { _ in
+                expectation.fulfill()
+            }, receiveValue: { uploadItem in
+                uploader.processResponse(uploadItem: uploadItem)
+            })
+            .store(in: &subscriptions)
+        
+        // Awaiting fulfilment of our expecation before
+        // performing our asserts:
+        waitForExpectations(timeout: 10)
+        
+        XCTAssertTrue(uploader.finished)
+        print(uploader.queued.first?.downloadUrl ?? "?")
+    }
+    
+    // (uses /media endpoint by default)
     func testMultipleBlossomUploads() throws {
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
-
-
 
         let filepath1 = Bundle.module.url(forResource: "upload-test", withExtension: "png")
         let imageData1 = try Data(contentsOf: filepath1!)
@@ -205,12 +265,14 @@ final class BlossomTests: XCTestCase {
         }
     }
     
-    func testBlossomHeadMedia() async throws {
+    // Check if blossom server supports /media or /upload
+    func testBlossomHeadMediaOrUpload() async throws {
         let keys = try Keys(privateKeyHex: "6029335db548259ab97efa5fbeea0fe21499010647a3436e83c84ff094a0670e")
         
-        let testSuccess = try await testBlossomServer(URL(string: "http://localhost:3000")!, keys: keys)
+        let supportedBlossomType: SupportedBlossomType = try await testBlossomServer(URL(string: "http://localhost:3355")!, keys: keys)
         
-        XCTAssertTrue(testSuccess)
+        print(supportedBlossomType.self  as Any)
+        XCTAssertTrue(supportedBlossomType == .upload)
     }
     
     func testBlossomMirror() async throws {
