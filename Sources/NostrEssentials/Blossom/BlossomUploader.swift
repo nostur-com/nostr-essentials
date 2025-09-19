@@ -194,7 +194,7 @@ public func testBlossomServer(_ serverURL: URL, testHash: String? = nil, keys: K
 }
 
 // Helper to test if a given server url supports uploading
-public func testBlossomServer(_ serverURL: URL, authorization: String) async throws -> SupportedBlossomType {
+public func testBlossomServer(_ serverURL: URL, authorization: String, sha256: String) async throws -> SupportedBlossomType {
     let config = URLSessionConfiguration.default
     config.requestCachePolicy = .reloadIgnoringLocalCacheData // Disable cache
     config.urlCache = nil // Ensure no caching
@@ -206,6 +206,7 @@ public func testBlossomServer(_ serverURL: URL, authorization: String) async thr
     mediaRequest.setValue("image/png", forHTTPHeaderField: "X-Content-Type")
     mediaRequest.setValue(authorization, forHTTPHeaderField: "Authorization")
     mediaRequest.setValue("184292", forHTTPHeaderField: "X-Content-Length")
+    mediaRequest.setValue(sha256, forHTTPHeaderField:  "X-SHA-256")
 
     let (_, responseMedia) = try await session.data(for: mediaRequest)
     
@@ -219,6 +220,7 @@ public func testBlossomServer(_ serverURL: URL, authorization: String) async thr
     uploadRequest.setValue("image/png", forHTTPHeaderField: "X-Content-Type")
     uploadRequest.setValue(authorization, forHTTPHeaderField: "Authorization")
     uploadRequest.setValue("184292", forHTTPHeaderField: "X-Content-Length")
+    uploadRequest.setValue(sha256, forHTTPHeaderField:  "X-SHA-256")
     
     let (_, responseUpload) = try await session.data(for: uploadRequest)
     
