@@ -34,4 +34,30 @@ final class NIP_59GiftWrapTests: XCTestCase {
         XCTAssertEqual(rumorFromSignedEvent.isRumor(), true) // has ID and no sig
     }
 
+    func testCreateSeal() throws {
+        let keys = aliceKeys
+        
+        // First create a rumor
+        var unsignedEvent = Event(
+            pubkey: aliceKeys.publicKeyHex,
+            content: "Hello World", kind: 1, created_at: 1676784320
+        )
+
+        let rumor = createRumor(unsignedEvent) // makes sure ID is present and sig is removed
+        XCTAssertEqual(rumor.isRumor(), true) // has ID and no sig
+        
+        
+        // Create the seal (use bob as receiver)
+        let seal = createSignedSeal(rumor, ourKeys: aliceKeys, receiverPubkey: bobKeys.publicKeyHex)
+        
+        XCTAssertNotNil(seal)
+        
+        if let seal {
+            XCTAssertEqual(seal.tags.count, 0) // Make sure seal has no tags
+            XCTAssertFalse(seal.content.contains("created_at")) // Make sure content is encrypted
+            XCTAssertEqual(seal.kind, 13) // Should be kind 13
+            XCTAssertTrue(try seal.verified())
+        }
+    }
+    
 }
