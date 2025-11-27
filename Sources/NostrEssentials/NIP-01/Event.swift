@@ -96,6 +96,18 @@ public struct Event: Codable, Equatable, Identifiable {
 
         return self
     }
+    
+    public func isRumor() -> Bool {
+        let sha256Serialized = self.computeIdDigest()
+
+        if self.id != String(bytes:sha256Serialized.bytes) {
+            return false
+        }
+        if self.sig.isEmpty {
+            return true
+        }
+        return false
+    }
 
     public func verified() throws -> Bool {
         let sha256Serialized = self.computeIdDigest()
