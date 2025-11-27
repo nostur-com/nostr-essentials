@@ -48,6 +48,31 @@ func createSignedSeal(_ rumor: Event, ourKeys: Keys, receiverPubkey: String) -> 
 }
 
 
+// Create a Gift Wrap
+// NIP-59: A gift wrap event is a kind:1059 event that wraps any other event. tags SHOULD include any information needed to route the event to its intended recipient, including the recipient's p tag or NIP-13 proof of work.
+func createGiftWrap(_ event: Event, receiverPubkey: String) -> Event? {
+    // One-time use key
+    guard let oneTimeUseKeys = try? Keys.newKeys() else { return nil }
+    guard let eventJson = event.json() else { return nil }
+
+    // encrypt event
+    guard let encrypedEvent = Keys.encryptDirectMessageContent44(withPrivatekey: oneTimeUseKeys.privateKeyHex, pubkey: receiverPubkey, content: eventJson) else { return nil }
+    
+    // wrap the event
+    var giftWrap = Event(
+        pubkey: oneTimeUseKeys.publicKeyHex,
+        content: encrypedEvent,
+        kind: 1059,
+        created_at: nip59CreatedAt(),
+        tags: [
+            Tag(["p", receiverPubkey]) // The receiver
+        ]
+    )
+    
+    // return the Gift Wrap signed
+    return try? giftWrap.sign(oneTimeUseKeys)
+}
+
 // Create a fuzzy timestamp in the past
 // NIP-59: The canonical created_at time belongs to the rumor. All other timestamps SHOULD be tweaked to thwart time-analysis attacks. Note that some relays don't serve events dated in the future, so all timestamps SHOULD be in the past.
 

@@ -60,4 +60,24 @@ final class NIP_59GiftWrapTests: XCTestCase {
         }
     }
     
+    func testGiftWrap() throws {
+        // First create some event to wrap (can be seal or anything else)
+        let unsignedEvent = Event(
+            pubkey: aliceKeys.publicKeyHex,
+            content: "Hello World", kind: 1, created_at: 1676784320
+        )
+
+        let giftWrap = createGiftWrap(unsignedEvent, receiverPubkey: bobKeys.publicKeyHex)
+        XCTAssertNotNil(giftWrap)
+        
+        if let giftWrap {
+            XCTAssertEqual(giftWrap.tags.contains(where: { $0.type == "p" && $0.value == bobKeys.publicKeyHex }), true) // should have receipent p tag
+            XCTAssertFalse(giftWrap.pubkey == aliceKeys.publicKeyHex) // pubkey should not be alice. should be random one-off key
+            XCTAssertFalse(giftWrap.content.contains("created_at")) // Make sure content is encrypted
+            XCTAssertFalse(giftWrap.content.contains(aliceKeys.publicKeyHex)) // Make alice pubkey is nowhere to be found
+            XCTAssertEqual(giftWrap.kind, 1059)
+            XCTAssertTrue(try giftWrap.verified())
+        }
+    }
+
 }
