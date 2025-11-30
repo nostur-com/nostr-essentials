@@ -35,8 +35,6 @@ final class NIP_59GiftWrapTests: XCTestCase {
     }
 
     func testCreateSeal() throws {
-        let keys = aliceKeys
-        
         // First create a rumor
         var unsignedEvent = Event(
             pubkey: aliceKeys.publicKeyHex,
@@ -46,38 +44,58 @@ final class NIP_59GiftWrapTests: XCTestCase {
         let rumor = createRumor(unsignedEvent) // makes sure ID is present and sig is removed
         XCTAssertEqual(rumor.isRumor(), true) // has ID and no sig
         
-        
         // Create the seal (use bob as receiver)
-        let seal = createSignedSeal(rumor, ourKeys: aliceKeys, receiverPubkey: bobKeys.publicKeyHex)
+        let seal = try createSignedSeal(rumor, ourKeys: aliceKeys, receiverPubkey: bobKeys.publicKeyHex)
         
-        XCTAssertNotNil(seal)
-        
-        if let seal {
-            XCTAssertEqual(seal.tags.count, 0) // Make sure seal has no tags
-            XCTAssertFalse(seal.content.contains("created_at")) // Make sure content is encrypted
-            XCTAssertEqual(seal.kind, 13) // Should be kind 13
-            XCTAssertTrue(try seal.verified())
-        }
+        XCTAssertEqual(seal.tags.count, 0) // Make sure seal has no tags
+        XCTAssertFalse(seal.content.contains("created_at")) // Make sure content is encrypted
+        XCTAssertEqual(seal.kind, 13) // Should be kind 13
+        XCTAssertTrue(try seal.verified())
     }
     
     func testGiftWrap() throws {
-        // First create some event to wrap (can be seal or anything else)
+        // First create some event to wrap (can be any event, sig will be removed)
         let unsignedEvent = Event(
             pubkey: aliceKeys.publicKeyHex,
             content: "Hello World", kind: 1, created_at: 1676784320
         )
 
-        let giftWrap = createGiftWrap(unsignedEvent, receiverPubkey: bobKeys.publicKeyHex)
-        XCTAssertNotNil(giftWrap)
+        let giftWrap = try createGiftWrap(unsignedEvent, receiverPubkey: bobKeys.publicKeyHex, keys: aliceKeys)
         
-        if let giftWrap {
-            XCTAssertEqual(giftWrap.tags.contains(where: { $0.type == "p" && $0.value == bobKeys.publicKeyHex }), true) // should have receipent p tag
-            XCTAssertFalse(giftWrap.pubkey == aliceKeys.publicKeyHex) // pubkey should not be alice. should be random one-off key
-            XCTAssertFalse(giftWrap.content.contains("created_at")) // Make sure content is encrypted
-            XCTAssertFalse(giftWrap.content.contains(aliceKeys.publicKeyHex)) // Make alice pubkey is nowhere to be found
-            XCTAssertEqual(giftWrap.kind, 1059)
-            XCTAssertTrue(try giftWrap.verified())
+        XCTAssertEqual(giftWrap.tags.contains(where: { $0.type == "p" && $0.value == bobKeys.publicKeyHex }), true) // should have receipent p tag
+        XCTAssertFalse(giftWrap.pubkey == aliceKeys.publicKeyHex) // pubkey should not be alice. should be random one-off key
+        XCTAssertFalse(giftWrap.content.contains("created_at")) // Make sure content is encrypted
+        XCTAssertFalse(giftWrap.content.contains(aliceKeys.publicKeyHex)) // Make alice pubkey is nowhere to be found
+        XCTAssertEqual(giftWrap.kind, 1059)
+        XCTAssertTrue(try giftWrap.verified())
+    }
+    
+    func testUnwrapGift() throws {
+        let giftWrap = try self.getTestGiftWrapEvent()
+        XCTAssertEqual(giftWrap.kind, 1059)
+        XCTAssertTrue(giftWrap.tags.contains(where: { $0.type == "p" && $0.value == bobKeys.publicKeyHex  }))
+        XCTAssertTrue(giftWrap.created_at != 16767843201) // outer date should not be real date (but out of our control as receiver)
+
+
+        let unwrappedGift = try unwrapGift(giftWrap, ourKeys: bobKeys)
+        XCTAssertEqual(unwrappedGift.rumor.kind, 14)
+        XCTAssertEqual(unwrappedGift.rumor.content, "Hello World")
+        XCTAssertEqual(unwrappedGift.rumor.pubkey, aliceKeys.publicKeyHex)
+        XCTAssertEqual(unwrappedGift.rumor.created_at, 1676784320)
+        
+        // NIP-17 in case of kind:14:
+        // Clients MUST verify if pubkey of the kind:13 is the same pubkey on the kind:14, otherwise any sender can impersonate others by simply changing the pubkey on kind:14.
+        if unwrappedGift.rumor.kind == 14 {
+            XCTAssertEqual(unwrappedGift.rumor.pubkey, unwrappedGift.seal.pubkey)
         }
     }
 
+    private func getTestGiftWrapEvent() throws -> Event {
+        let unsignedEvent = Event(
+            pubkey: aliceKeys.publicKeyHex,
+            content: "Hello World", kind: 14, created_at: 1676784320
+        )
+
+        return try createGiftWrap(unsignedEvent, receiverPubkey: bobKeys.publicKeyHex, keys: aliceKeys)
+    }
 }

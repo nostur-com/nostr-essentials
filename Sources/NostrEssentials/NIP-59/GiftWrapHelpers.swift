@@ -25,14 +25,13 @@ func createRumor(_ event: Event) -> Event {
 // Create a seal
 //
 // NIP-59: A seal is a kind:13 event that wraps a rumor with the sender's regular key. The seal is always encrypted to a receiver's pubkey but there is no p tag pointing to the receiver. There is no way to know who the rumor is for without the receiver's or the sender's private key. The only public information in this event is who is signing it.
-
-func createSignedSeal(_ rumor: Event, ourKeys: Keys, receiverPubkey: String) -> Event? {
+func createSignedSeal(_ rumor: Event, ourKeys: Keys, receiverPubkey: String) throws -> Event {
     // make sure inner rumor event has id and no sig
     var actualRumor = createRumor(rumor)
-    guard let rumorJson = actualRumor.json() else { return nil }
+    guard let rumorJson = actualRumor.json() else { throw GiftWrapError.EncodeRumorError }
     
     // encrypt rumor
-    guard let encrypedRumor = Keys.encryptDirectMessageContent44(withPrivatekey: ourKeys.privateKeyHex, pubkey: receiverPubkey, content: rumorJson) else { return nil }
+    guard let encrypedRumor = Keys.encryptDirectMessageContent44(withPrivatekey: ourKeys.privateKeyHex, pubkey: receiverPubkey, content: rumorJson) else { throw GiftWrapError.EncryptRumorError }
     
     // seal the rumor
     var seal = Event(
@@ -44,24 +43,53 @@ func createSignedSeal(_ rumor: Event, ourKeys: Keys, receiverPubkey: String) -> 
     )
     
     // return the seal signed
-    return try? seal.sign(ourKeys)
+    return try seal.sign(ourKeys)
 }
 
 
-// Create a Gift Wrap
-// NIP-59: A gift wrap event is a kind:1059 event that wraps any other event. tags SHOULD include any information needed to route the event to its intended recipient, including the recipient's p tag or NIP-13 proof of work.
-func createGiftWrap(_ event: Event, receiverPubkey: String) -> Event? {
-    // One-time use key
-    guard let oneTimeUseKeys = try? Keys.newKeys() else { return nil }
-    guard let eventJson = event.json() else { return nil }
+public enum GiftWrapError: Error {
+    
+    // Recieving/Unwrapping
+    
+    case NotKind1059Event
+    case WrongRecipient
+    
+    case DecryptSealError
+    case DecodeSealError
+    case InvalidSealError
+    
+    case DecryptRumorError
+    case DecodeRumorError
+    case InvalidRumorError
+    
+    
+    // Sending/Wrapping
+    
+    case OneOffKeyGenerationError
+    case SignSealError
+    case EncodeSealError
+    case EncryptSealError
 
-    // encrypt event
-    guard let encrypedEvent = Keys.encryptDirectMessageContent44(withPrivatekey: oneTimeUseKeys.privateKeyHex, pubkey: receiverPubkey, content: eventJson) else { return nil }
+    case EncodeRumorError
+    case EncryptRumorError
+}
+
+// Create a Gift Wrap
+// NIP-59: A gift wrap event is a kind:1059 event that wraps a seal (kind: 13), which in turn wraps a rumor (any kind). tags SHOULD include any information needed to route the event to its intended recipient, including the recipient's p tag or NIP-13 proof of work.
+func createGiftWrap(_ rumor: Event, receiverPubkey: String, keys: Keys) throws -> Event {
+    // One-time use key
+    guard let oneTimeUseKeys = try? Keys.newKeys() else { throw GiftWrapError.OneOffKeyGenerationError }
+    
+    guard let seal = try? createSignedSeal(rumor, ourKeys: keys, receiverPubkey: receiverPubkey) else { throw GiftWrapError.SignSealError }
+    guard let sealJson = seal.json() else { throw GiftWrapError.EncodeSealError }
+    
+    // encrypt seal
+    guard let sealJsonEncrypted = Keys.encryptDirectMessageContent44(withPrivatekey: oneTimeUseKeys.privateKeyHex, pubkey: receiverPubkey, content: sealJson) else { throw GiftWrapError.EncryptSealError }
     
     // wrap the event
     var giftWrap = Event(
         pubkey: oneTimeUseKeys.publicKeyHex,
-        content: encrypedEvent,
+        content: sealJsonEncrypted,
         kind: 1059,
         created_at: nip59CreatedAt(),
         tags: [
@@ -70,7 +98,7 @@ func createGiftWrap(_ event: Event, receiverPubkey: String) -> Event? {
     )
     
     // return the Gift Wrap signed
-    return try? giftWrap.sign(oneTimeUseKeys)
+    return try giftWrap.sign(oneTimeUseKeys)
 }
 
 // Create a fuzzy timestamp in the past
@@ -84,4 +112,31 @@ func nip59CreatedAt() -> Int {
     let randomTimestamp = Int.random(in: tenHoursAgo...now)
     
     return randomTimestamp
+}
+
+
+func unwrapGift(_ giftWrapEvent: Event, ourKeys: Keys) throws -> (rumor: Event, seal: Event) {
+    guard giftWrapEvent.kind == 1059 else { throw GiftWrapError.NotKind1059Event }
+    guard giftWrapEvent.tags.contains(where: { $0.type == "p" && $0.pubkey == ourKeys.publicKeyHex }) else { throw GiftWrapError.WrongRecipient }
+    
+    // Decrypt seal
+    guard let sealJsonDecrypted = Keys.decryptDirectMessageContent44(withPrivateKey: ourKeys.privateKeyHex, pubkey: giftWrapEvent.pubkey, content: giftWrapEvent.content)
+    else { throw GiftWrapError.DecryptSealError }
+    
+    guard let seal = Event.fromJson(sealJsonDecrypted) else {
+        throw GiftWrapError.DecodeSealError
+    }
+    
+    // NIP-59: Tags MUST always be empty in a kind:13. The inner event MUST always be unsigned.
+    guard seal.tags.isEmpty, seal.kind == 13 else { throw GiftWrapError.InvalidSealError }
+    
+    // Decrypt rumor
+    guard let rumJsonDecrypted = Keys.decryptDirectMessageContent44(withPrivateKey: ourKeys.privateKeyHex, pubkey: seal.pubkey, content: seal.content)
+    else { throw GiftWrapError.DecryptRumorError }
+    
+    guard let rumor = Event.fromJson(rumJsonDecrypted) else {
+        throw GiftWrapError.DecodeRumorError
+    }
+        
+    return (rumor: rumor, seal: seal)
 }
