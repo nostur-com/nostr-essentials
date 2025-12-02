@@ -16,7 +16,7 @@ import Foundation
 // - A rumor is a regular nostr event, but is not signed. This means that if it is leaked, it cannot be verified.
 // - A rumor is serialized to JSON, encrypted, and placed in the content field of a seal. The seal is then signed by the author of the note. The only information publicly available on a seal is who signed it, but not what was said.
 // This function makes sure the event has an ID and removes the signature.
-func createRumor(_ event: Event) -> Event {
+public func createRumor(_ event: Event) -> Event {
     var rumor = event
     rumor.sig = ""
     return rumor.withId()
@@ -25,9 +25,9 @@ func createRumor(_ event: Event) -> Event {
 // Create a seal
 //
 // NIP-59: A seal is a kind:13 event that wraps a rumor with the sender's regular key. The seal is always encrypted to a receiver's pubkey but there is no p tag pointing to the receiver. There is no way to know who the rumor is for without the receiver's or the sender's private key. The only public information in this event is who is signing it.
-func createSignedSeal(_ rumor: Event, ourKeys: Keys, receiverPubkey: String) throws -> Event {
+public func createSignedSeal(_ rumor: Event, ourKeys: Keys, receiverPubkey: String) throws -> Event {
     // make sure inner rumor event has id and no sig
-    var actualRumor = createRumor(rumor)
+    let actualRumor = createRumor(rumor)
     guard let rumorJson = actualRumor.json() else { throw GiftWrapError.EncodeRumorError }
     
     // encrypt rumor
@@ -61,6 +61,7 @@ public enum GiftWrapError: Error {
     case DecryptRumorError
     case DecodeRumorError
     case InvalidRumorError
+    case PossibleImpersonationError
     
     
     // Sending/Wrapping
@@ -76,7 +77,7 @@ public enum GiftWrapError: Error {
 
 // Create a Gift Wrap
 // NIP-59: A gift wrap event is a kind:1059 event that wraps a seal (kind: 13), which in turn wraps a rumor (any kind). tags SHOULD include any information needed to route the event to its intended recipient, including the recipient's p tag or NIP-13 proof of work.
-func createGiftWrap(_ rumor: Event, receiverPubkey: String, keys: Keys) throws -> Event {
+public func createGiftWrap(_ rumor: Event, receiverPubkey: String, keys: Keys) throws -> Event {
     // One-time use key
     guard let oneTimeUseKeys = try? Keys.newKeys() else { throw GiftWrapError.OneOffKeyGenerationError }
     
@@ -104,7 +105,7 @@ func createGiftWrap(_ rumor: Event, receiverPubkey: String, keys: Keys) throws -
 // Create a fuzzy timestamp in the past
 // NIP-59: The canonical created_at time belongs to the rumor. All other timestamps SHOULD be tweaked to thwart time-analysis attacks. Note that some relays don't serve events dated in the future, so all timestamps SHOULD be in the past.
 
-func nip59CreatedAt() -> Int {
+public func nip59CreatedAt() -> Int {
     let now = Int(Date().timeIntervalSince1970)
     let tenHoursAgo = now - 10 * 60 * 60  // 10 hours in seconds
     
@@ -115,7 +116,7 @@ func nip59CreatedAt() -> Int {
 }
 
 
-func unwrapGift(_ giftWrapEvent: Event, ourKeys: Keys) throws -> (rumor: Event, seal: Event) {
+public func unwrapGift(_ giftWrapEvent: Event, ourKeys: Keys) throws -> (rumor: Event, seal: Event) {
     guard giftWrapEvent.kind == 1059 else { throw GiftWrapError.NotKind1059Event }
     guard giftWrapEvent.tags.contains(where: { $0.type == "p" && $0.pubkey == ourKeys.publicKeyHex }) else { throw GiftWrapError.WrongRecipient }
     
