@@ -107,10 +107,10 @@ public func createGiftWrap(_ rumor: Event, receiverPubkey: String, keys: Keys) t
 
 public func nip59CreatedAt() -> Int {
     let now = Int(Date().timeIntervalSince1970)
-    let tenHoursAgo = now - 10 * 60 * 60  // 10 hours in seconds
+    let fortySevenHoursAgo = now - 47 * 60 * 60  // 47 hours in seconds
     
     // Generate random timestamp between tenHoursAgo and now (inclusive)
-    let randomTimestamp = Int.random(in: tenHoursAgo...now)
+    let randomTimestamp = Int.random(in: fortySevenHoursAgo...now)
     
     return randomTimestamp
 }
