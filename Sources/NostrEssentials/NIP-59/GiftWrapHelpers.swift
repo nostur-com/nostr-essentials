@@ -138,6 +138,9 @@ public func unwrapGift(_ giftWrapEvent: Event, ourKeys: Keys) throws -> (rumor: 
     guard let rumor = Event.fromJson(rumJsonDecrypted) else {
         throw GiftWrapError.DecodeRumorError
     }
+    
+    // Make sure rumor.pubkey matches seal.pubkey to prevent impersonation (TODO: Optional? But is there even a use case where this would not be required?)
+    guard seal.pubkey == rumor.pubkey else { throw GiftWrapError.PossibleImpersonationError }
         
     return (rumor: rumor, seal: seal)
 }
