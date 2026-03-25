@@ -1,6 +1,6 @@
 //
 //  Event.swift
-//  
+//
 //
 //  Created by Fabian Lachman on 15/08/2023.
 //
@@ -14,7 +14,14 @@ public struct Event: Codable, Equatable, Identifiable {
         lhs.id == rhs.id && lhs.sig == rhs.sig
     }
     
-    public var id: String
+    public var id: String? = ""
+    
+    // If id is missing (on rumor) but we still need actual id, we calculate it.
+    public func fallbackId() -> String {
+        if let id { return id }
+        return self.computeId()
+    }
+    
     public var pubkey: String
     public var created_at: Int
     public var kind: Int
@@ -42,11 +49,11 @@ public struct Event: Codable, Equatable, Identifiable {
         self.sig = ""
     }
 
-    public init(pubkey: String = "", content: String = "", kind: Int = 1, created_at: Int = Int(Date.now.timeIntervalSince1970), id: String = "", tags: [Tag] = [], sig: String? = "") {
+    public init(pubkey: String = "", content: String = "", kind: Int = 1, created_at: Int = Int(Date.now.timeIntervalSince1970), id: String? = "", tags: [Tag] = [], sig: String? = "") {
         self.kind = kind
         self.created_at = created_at
         self.content = content
-        self.id = id
+        self.id = id ?? ""
         self.tags = tags
         self.pubkey = pubkey
         self.sig = sig
@@ -100,7 +107,7 @@ public struct Event: Codable, Equatable, Identifiable {
     public func isRumor() -> Bool {
         let sha256Serialized = self.computeIdDigest()
 
-        if self.id != String(bytes:sha256Serialized.bytes) {
+        if self.id != nil && self.id != String(bytes:sha256Serialized.bytes) {
             return false
         }
         if sig == nil {
