@@ -130,7 +130,9 @@ public func unwrapGift(_ giftWrapEvent: Event, ourKeys: Keys) throws -> (rumor: 
     }
     
     // NIP-59: Tags MUST always be empty in a kind:13. The inner event MUST always be unsigned.
-    guard seal.tags.isEmpty, seal.kind == 13 else { throw GiftWrapError.InvalidSealError }
+//    guard seal.tags.isEmpty, seal.kind == 13 else { throw GiftWrapError.InvalidSealError }
+    // Loosen up the restriction otherwise messages are missing because some clients add tags on the seal....
+    guard seal.kind == 13 else { throw GiftWrapError.InvalidSealError }
     
     // Decrypt rumor
     guard let rumJsonDecrypted = Keys.decryptDirectMessageContent44(withPrivateKey: ourKeys.privateKeyHex, pubkey: seal.pubkey, content: seal.content)
